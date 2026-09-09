@@ -176,7 +176,44 @@ function verifyStagedApp(appStage) {
     for (const [f, why] of missing) say(`  MISSING ${f}   (needed for ${why})`);
     throw new Error(`${missing.length} required file(s) missing from the staged app`);
   }
-  say(`  verified ${required.length} required paths are present.`);
+
+  // 🔴 EVERY PACKAGE MUST STILL HAVE ITS package.json.
+  //
+  // This shipped once. `node_modules/async` was present, looked right, had 105
+  // of its 111 files - and was missing `package.json`, `whilst.js` and
+  // `wrapSync.js`. Node then cannot resolve the package at all, so exceljs
+  // could not write a spreadsheet, in a release whose every other check passed.
+  // Files disappear here for real reasons (antivirus scanning a fresh copy of
+  // 9,000 small files, an interrupted install), so the build must look rather
+  // than assume.
+  //
+  // Spot-checking a handful of "important" packages would not have caught it:
+  // nothing about `async` looks important until exceljs needs it.
+  const modulesDir = path.join(appStage, "node_modules");
+  const broken = [];
+  const checkPkg = (dir, name) => {
+    if (!fs.existsSync(path.join(dir, "package.json"))) broken.push(name);
+  };
+  for (const entry of fs.readdirSync(modulesDir)) {
+    if (entry.startsWith(".")) continue;
+    const full = path.join(modulesDir, entry);
+    if (!fs.statSync(full).isDirectory()) continue;
+    if (entry.startsWith("@")) {
+      for (const scoped of fs.readdirSync(full)) checkPkg(path.join(full, scoped), `${entry}/${scoped}`);
+      continue;
+    }
+    checkPkg(full, entry);
+  }
+  if (broken.length) {
+    say("");
+    say("Staged packages are damaged - these have no package.json, so Node cannot load them:");
+    for (const name of broken) say(`  BROKEN node_modules/${name}`);
+    say("");
+    say("Run `npm ci` and build again. If this keeps happening, exclude this");
+    say("folder from your antivirus - deleting files mid-copy is what causes it.");
+    throw new Error(`${broken.length} staged package(s) are missing their package.json`);
+  }
+  say(`  verified ${required.length} required paths, and every staged package can be loaded.`);
 }
 
 function dirSizeMB(dir) {

@@ -34,7 +34,9 @@ let _pages = [];
 let _active = 0;
 
 function browsersPath() {
-  return PATHS.browsers;
+  // Ours if we have it, otherwise an OmniAgent install's copy of the same
+  // Chromium. See src/setup/borrow-runtime.mjs.
+  return browsersDir();
 }
 
 async function playwright() {

@@ -11,6 +11,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { pkg } from "../util/paths.mjs";
+// Resolved once at startup and read from config here, because this module is
+// synchronous and deciding whether OmniAgent is running needs a port probe.
+import { borrowedModules } from "../setup/borrow-runtime.mjs";
 
 const ENTRY_REL = path.join("bin", "omniroute.mjs");
 
@@ -44,6 +47,11 @@ function candidateRoots() {
   // BEFORE the machine's global npm root, so the version this build was tested
   // against wins over whatever the user happens to have installed globally.
   roots.push(pkg("runtime", "node_modules", "omniroute"));
+  // An OmniAgent install's copy. AFTER our own private prefix, so a real
+  // install of ours always wins, and only ever set when OmniAgent was not
+  // running at startup.
+  const borrowed = borrowedModules();
+  if (borrowed) roots.push(path.join(borrowed, "omniroute"));
   roots.push(pkg("vendor", "omniroute"));
   roots.push(pkg("node_modules", "omniroute"));
   for (const dir of globalNodeModulesDirs()) roots.push(path.join(dir, "omniroute"));
@@ -79,6 +87,8 @@ export function locateOpenCode() {
   const exeName = process.platform === "win32" ? "opencode.exe" : "opencode";
   // Package roots that may contain the real binary, private prefix first.
   const pkgRoots = [pkg("runtime", "node_modules"), pkg("node_modules")];
+  const borrowedDir = borrowedModules();
+  if (borrowedDir) pkgRoots.push(borrowedDir);
   for (const dir of globalNodeModulesDirs()) pkgRoots.push(dir);
   for (const root of pkgRoots) {
     const full = path.join(root, "opencode-ai", "bin", exeName);

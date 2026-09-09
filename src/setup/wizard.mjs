@@ -24,6 +24,7 @@ import { rememberVerifiedModel } from "../ui/prefs.mjs";
 import { PRESETS } from "../routing/select.mjs";
 import { logger } from "../util/log.mjs";
 import { nodeExe } from "../util/node-exe.mjs";
+import { browsersDir, resolveBorrow, describeBorrow } from "./borrow-runtime.mjs";
 
 const log = logger("wizard");
 
@@ -39,7 +40,7 @@ export async function installBrowser({ onProgress = say } = {}) {
   onProgress("Downloading the browser engine (about 150 MB, one time)...");
   return new Promise((resolve) => {
     const child = spawn(nodeExe() ?? process.execPath, [cli, "install", "chromium"], {
-      env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH: PATHS.browsers },
+      env: { ...process.env, PLAYWRIGHT_BROWSERS_PATH: browsersDir() },
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
     });
@@ -249,9 +250,29 @@ export async function runSetup(opts = {}) {
 
     ensureGatewayEnv();
 
+    // Before anything is downloaded: is the same 4 GB already on this computer
+    // under the name this product was forked from? Reusing it is the difference
+    // between a thirty-minute first run and an instant one.
+    const borrow = await resolveBorrow().catch((err) => ({ borrowing: false, error: err.message }));
+    if (borrow.borrowing && !borrow.blocked) {
+      const gb = ((borrow.detected?.savesMB ?? 0) / 1024).toFixed(1);
+      say(`  Found an OmniAgent install on this computer.`);
+      say(`  Sharing its model gateway, agent and browser - about ${gb} GB that does not need downloading.`);
+      say();
+    } else if (borrow.blocked) {
+      say("  An OmniAgent install is here, but OmniAgent is OPEN right now.");
+      say("  Its components cannot be shared while it runs, because both apps");
+      say("  start a model gateway on the same port.");
+      say("  Close OmniAgent and run setup again to share them instead of");
+      say("  downloading a second copy.");
+      say();
+    }
+
     if (!opts.skipBrowser) {
       const { chromiumInstalled } = await import("../tools/browser.mjs");
       if (chromiumInstalled()) {
+        // True for a borrowed Chromium too: chromiumInstalled() looks wherever
+        // browsersDir() points, which is the whole reason it is a function.
         say("  Browser engine: already installed.");
       } else {
         const r = await installBrowser({ onProgress: (m) => say("  " + m) });

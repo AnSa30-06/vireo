@@ -26,6 +26,7 @@ import { openWindow } from "./window.mjs";
 import { startArchiver, stopArchiver } from "./transcripts.mjs";
 import { startScheduler, stopScheduler } from "./routines.mjs";
 import { startFollowup, stopFollowup } from "../decisions/followup.mjs";
+import { resolveBorrow } from "../setup/borrow-runtime.mjs";
 import { loadConfig } from "../config.mjs";
 import { PATHS } from "../util/paths.mjs";
 import { logger } from "../util/log.mjs";
@@ -121,6 +122,21 @@ function problemFor(reason, detail) {
  */
 async function bringUp(say) {
   startupBegin(STEPS);
+
+  // Decided BEFORE the gateway starts, because it is what tells locate.mjs
+  // where the gateway is. Never fatal: a failure here just means we download
+  // our own copy, which is what would have happened anyway.
+  try {
+    const borrow = await resolveBorrow();
+    if (borrow.borrowing && !borrow.blocked) {
+      say(`  Using components already on this computer from OmniAgent (about ${Math.round((borrow.detected?.savesMB ?? 0) / 1024)} GB not downloaded).`);
+    } else if (borrow.blocked) {
+      say(`  OmniAgent is open, so its components cannot be shared right now.`);
+      say(`  ${borrow.remedy}`);
+    }
+  } catch (err) {
+    log.warn("could not check for a shareable OmniAgent install", { error: err.message });
+  }
 
   startupStep("gateway", "running");
   say("Starting the model gateway...");

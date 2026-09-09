@@ -12,6 +12,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { PATHS, ensureDirs, pkg } from "../util/paths.mjs";
 import { loadConfig, gatewayBaseUrl } from "../config.mjs";
+import { browsersDir } from "./borrow-runtime.mjs";
 import { locateOmniRoute } from "../gateway/locate.mjs";
 import { logger } from "../util/log.mjs";
 
@@ -39,7 +40,7 @@ export function opencodeEnv(extra = {}) {
     XDG_CONFIG_HOME: PATHS.home,
     XDG_DATA_HOME: ocDataDir(),
     VIREO_HOME: PATHS.home,
-    PLAYWRIGHT_BROWSERS_PATH: PATHS.browsers,
+    PLAYWRIGHT_BROWSERS_PATH: browsersDir(),
     OPENCODE_DISABLE_EXTERNAL_SKILLS: "1",
     OPENCODE_DISABLE_CLAUDE_CODE_SKILLS: "1",
     // The OmniRoute plugin resolves auth.json from OPENCODE_DATA_DIR, falling

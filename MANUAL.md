@@ -67,6 +67,14 @@ No administrator password is needed. It installs just for you.
 When the installer finishes it opens a setup window. **This part takes ten to
 thirty minutes and downloads about 4 GB.** It only ever happens once.
 
+> **Already have OmniAgent installed?** Vireo is a fork of it, and the three big
+> components are identical. Vireo finds them and shares them, so the download is
+> skipped entirely and setup takes seconds.
+>
+> **Close OmniAgent first.** While it is open its model gateway holds the port
+> Vireo needs, so the components cannot be shared and Vireo downloads its own
+> copy instead. Setup says so plainly when this happens.
+
 It is fetching the three big pieces that are too large to put in a download: the
 model gateway, the agent engine, and a web browser for it to drive.
 
@@ -360,7 +368,8 @@ vireo provider             Free providers you can add
 
 | | |
 |---|---|
-| [Decisions, in full](docs/decisions/) | 15 pages: every screen, importing data, privacy, limits |
+| **The manual, inside the app** | Open Decisions and click **How to use this**. Every screen, what the AI may and may not do, importing your data, and what this cannot do. |
+| [Decisions, in full](docs/decisions/) | The same ground in 15 longer pages |
 | [Getting started with Decisions](docs/decisions/getting-started.md) | Install to first handled decision |
 | [What Decisions cannot do](docs/decisions/limitations.md) | The honest list. Read it before relying on it. |
 | [The app window](docs/desktop-app.md) | Chat, Code, routines, transcripts, models |

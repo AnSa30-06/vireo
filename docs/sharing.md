@@ -49,6 +49,19 @@ this and delete it later.
 
 ---
 
+## 1b. They may not need the 4 GB download at all
+
+If the person you are sending this to already has **OmniAgent** installed, Vireo
+finds it and shares its model gateway, agent and browser rather than downloading
+nearly 4 GB of identical files. Setup then takes seconds instead of half an hour.
+
+**They must close OmniAgent first.** Both apps start a model gateway on the same
+port, so while OmniAgent is open the components cannot be shared and Vireo
+downloads its own copy. Setup and `vireo doctor` both say which is happening.
+
+Turn it off with `borrowRuntime: "never"` in `config.json` if you would rather
+each install were entirely self-contained.
+
 ## 2. Build the installer
 
 ```bash

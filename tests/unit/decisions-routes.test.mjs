@@ -60,13 +60,17 @@ test("the page is reachable from the chat app and from the CLI", () => {
 test("nothing in the Decisions page writes model output as HTML", () => {
   // Comments are stripped first: the file explains this rule in prose at the
   // top, and the first version of this test failed on its own documentation.
-  const code = read("src", "ui", "public", "decisions", "decisions.js")
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .split("\n")
-    .filter((l) => !l.trim().startsWith("//"))
-    .join("\n");
-  for (const bad of ["innerHTML", "outerHTML", "insertAdjacentHTML", "document.write"]) {
-    assert.ok(!code.includes(bad), `${bad} must never appear: imported names and model text are untrusted`);
+  // Both files: the manual builds DOM too, and a rule that only covers the
+  // file it was written for stops being a rule the moment a second one appears.
+  for (const file of ["decisions.js", "help.js"]) {
+    const code = read("src", "ui", "public", "decisions", file)
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .split("\n")
+      .filter((l) => !l.trim().startsWith("//"))
+      .join("\n");
+    for (const bad of ["innerHTML", "outerHTML", "insertAdjacentHTML", "document.write"]) {
+      assert.ok(!code.includes(bad), `${bad} must never appear in ${file}: imported names and model text are untrusted`);
+    }
   }
 });
 
@@ -91,4 +95,20 @@ test("a malformed rules file fails loudly, naming the key", async () => {
   const badAction = structuredClone(good);
   badAction.situations.churn_risk.actions = ["not_a_real_action"];
   assert.throws(() => validate(badAction), /not_a_real_action/);
+});
+
+test("the manual is a screen in the app, not only files on disk", () => {
+  // 🔴 The rule this enforces: a feature only reachable by finding a folder on
+  // disk is not finished. Fifteen markdown pages shipped with the last release
+  // and the person using it had no way to know they existed.
+  const html = read("src", "ui", "public", "decisions", "index.html");
+  assert.match(html, /data-view="help"/, "there must be a Help item in the nav");
+
+  const js = read("src", "ui", "public", "decisions", "decisions.js");
+  assert.match(js, /views\.help\s*=/, "the help view must exist");
+  assert.match(js, /renderManual/, "the view must render the manual module");
+
+  const help = read("src", "ui", "public", "decisions", "help.js");
+  assert.match(help, /export const MANUAL/);
+  assert.ok(help.length > 8000, "a manual this short would not be worth opening");
 });

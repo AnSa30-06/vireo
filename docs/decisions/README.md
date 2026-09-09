@@ -18,6 +18,10 @@ Everything runs on your own computer.
 
 ## Start here
 
+**The quickest route is inside the app: open Decisions and click "How to use
+this" in the sidebar.** It is the whole manual on one screen, and it works with
+no internet and no model. These pages are the longer version.
+
 | | |
 |---|---|
 | **[Getting started](getting-started.md)** | Install to your first handled decision. About 15 minutes. |

@@ -14,6 +14,8 @@
 // page uses innerHTML. The rule is the same one app.js follows and it is not
 // negotiable: model output and imported customer names are untrusted text.
 
+import { renderManual } from "./help.js";
+
 const TOKEN = new URL(location.href).searchParams.get("t") ?? "";
 
 async function api(name, { method = "GET", body, query } = {}) {
@@ -439,6 +441,11 @@ views.onboarding = async () => {
       "This looks at every customer you import, works out what has changed, and gives you a short list of things that need a decision — with the evidence behind each one. Three steps, about two minutes.",
     ),
   );
+
+  const readFirst = el("div", "pill-row");
+  readFirst.style.marginBottom = "18px";
+  readFirst.append(button("What is this? Read the manual", "btn", () => go("#/help")));
+  o.append(readFirst);
 
   const step = el("div", null);
   o.append(step);
@@ -1182,6 +1189,13 @@ views.activity = async (params, token) => {
   wrap.append(block);
 };
 
+views.help = async () => {
+  // No fetching: the manual is part of the program, so it opens instantly and
+  // works with the gateway down, which is exactly when someone reads it.
+  const wrap = page("How to use Decisions");
+  renderManual(wrap, go);
+};
+
 views.settings = async (params, token) => {
   const wrap = page("Settings");
   wrap.append(skeleton(2));
@@ -1406,7 +1420,9 @@ views.settings = async (params, token) => {
   // Docs
   const b8 = el("div", "block");
   b8.append(el("h3", null, "How to use this"));
-  b8.append(el("p", "note", "The full instructions are in the docs/decisions folder where Vireo is installed. Start with getting-started.md."));
+  b8.append(el("p", "note", "The manual is in this app: every screen, what the AI is and is not allowed to do, how to import your own data, and what this cannot do."));
+  b8.append(button("Open the manual", "btn primary", () => go("#/help")));
+  b8.append(el("div", "hint", "Longer versions of the same pages ship in the docs/decisions folder where Vireo is installed."));
   wrap.append(b8);
 };
 
@@ -1549,6 +1565,10 @@ async function renderRoute() {
         () => go("#/settings"),
       ),
     );
+    const more = el("div", "pill-row");
+    more.style.justifyContent = "center";
+    more.append(button("Read the manual first", "btn", () => go("#/help")));
+    wrap.append(more);
     return;
   }
 
