@@ -81,20 +81,8 @@ paid to vouch for this file"*, not *"this file is known to be bad"*.
 
 To run it anyway: click **More info**, then **Run anyway**.
 
-If you would rather check the file is exactly the one that was published, run this in
-PowerShell in your Downloads folder before opening it:
-
-```powershell
-Get-FileHash .\OmniAgentSetup-1.2.0.exe -Algorithm SHA256
-```
-
-It should print:
-
-```
-C69D98347396626CFFDCA1E1AFD0A1AD611F0B85C84F7C0C195E11F8CF9C1DE8
-```
-
-If it prints anything else, delete the file and download it again.
+To check the file is exactly the one that was published, see
+[Checking you got the right file](#checking-you-got-the-right-file) above.
 
 ---
 
@@ -126,7 +114,7 @@ Extract it anywhere, run `setup.bat` once, then `app.bat` to open the app (or `s
 for the terminal interface). Nothing is written outside the folder and your own data
 directory, and nothing is added to the registry or the Start Menu.
 
-Its SHA-256 is `b59c59c9261317b3cc70219b06bc7ea522674c876ba44fd317af2cdd2743af76`.
+Its SHA-256 is `0057FDCBC09B82EA7D3B317C1EA8AE98FD802D1124E7AF2843746EE673B9C105`.
 
 ---
 
