@@ -189,3 +189,46 @@ test("the updater points at Vireo's own repository, not the one it was forked fr
   assert.match(src, /const REPO = "AnSa30-06\/vireo"/, "an updater aimed at the upstream repo offers the wrong product's releases");
   assert.ok(!/AnSa30-06\/omni-agent/.test(src), "no reference to the upstream repo may remain");
 });
+
+// ── The browser check must not lie about WHY it failed ───────────────────────
+//
+// 🔴 THIS IS A REGRESSION TEST FOR A BUG THAT REACHED A USER'S MACHINE.
+// `browsersPath()` in src/tools/browser.mjs was changed to call `browsersDir()`
+// so a borrowed Chromium would be found, and the import was forgotten. Nothing
+// failed loudly. `chromiumInstalled()` wrapped the call in a bare `catch {}`, so
+// the ReferenceError became `false`, and setup printed:
+//
+//     [FAIL] Browser
+//            Chromium is not installed
+//            Fix: Run: vireo setup --browser
+//
+// on a machine two lines below which it also said it was borrowing a working
+// Chromium from OmniAgent. Following that advice downloads 700 MB and fails the
+// same way. The whole 249-test suite passed throughout, because nothing imported
+// this module.
+
+test("asking whether Chromium is installed does not crash", async () => {
+  const browser = await import("../../src/tools/browser.mjs");
+  // The ASSERTION IS THAT IT RETURNS AT ALL. A missing import inside
+  // browsersPath() throws here; the answer itself depends on the machine, so
+  // checking true/false would be checking the test runner's laptop, not the code.
+  const answer = browser.chromiumInstalled();
+  assert.equal(typeof answer, "boolean", "chromiumInstalled() must answer with a boolean");
+});
+
+test("a wrong answer about Chromium is never produced by swallowing a bug", async () => {
+  const src = fs.readFileSync(new URL("../../src/tools/browser.mjs", import.meta.url), "utf8");
+  // Every identifier browser.mjs calls from borrow-runtime must be imported.
+  // Plain string checks rather than a built regex: the escaping is not worth the
+  // risk of a test that passes because its own pattern was malformed.
+  if (src.includes("browsersDir(")) {
+    const importsIt = src
+      .split("\n")
+      .some((line) => line.startsWith("import") && line.includes("browsersDir") && line.includes("borrow-runtime.mjs"));
+    assert.ok(importsIt, "browser.mjs calls browsersDir() but never imports it - this is the exact shipped bug");
+  }
+  assert.ok(
+    !/catch\s*\{\s*return false;\s*\}/.test(src),
+    "a bare `catch { return false }` around the browser check turns a crash into a believable wrong diagnosis"
+  );
+});

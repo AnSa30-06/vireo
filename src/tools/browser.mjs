@@ -23,6 +23,13 @@ import path from "node:path";
 import { PATHS, ensureDirs } from "../util/paths.mjs";
 import { logger } from "../util/log.mjs";
 import { loadConfig } from "../config.mjs";
+// 🔴 browsersPath() BELOW CALLS THIS. Leaving it out does not fail loudly: the only
+// two callers are chromiumInstalled(), whose catch-all swallows the ReferenceError
+// and reports "Chromium is not installed", and playwright(), which throws at launch.
+// So a missing import here surfaces as a believable wrong diagnosis - it tells the
+// user to run `vireo setup --browser`, which downloads 700 MB and then fails the
+// same way, because the download is not what is broken.
+import { browsersDir } from "../setup/borrow-runtime.mjs";
 
 const log = logger("browser");
 
@@ -49,11 +56,23 @@ async function playwright() {
 
 /** True when a Chromium build is present in our browsers directory. */
 export function chromiumInstalled() {
+  // 🔴 browsersPath() IS DELIBERATELY OUTSIDE THE try. Working out WHERE to look
+  // cannot fail for any reason except a bug in us, and the old catch-all caught
+  // exactly that: a missing import threw a ReferenceError, this returned false,
+  // and the doctor reported "Chromium is not installed" on a machine where it WAS
+  // installed. The advice that follows that message - `vireo setup --browser` -
+  // downloads 700 MB and then fails identically, because the download was never
+  // the problem. A wrong diagnosis that sends someone on a long errand is worse
+  // than a crash.
+  const dir = browsersPath();
   try {
-    const entries = fs.readdirSync(browsersPath());
-    return entries.some((e) => /^chromium/.test(e));
-  } catch {
-    return false;
+    return fs.readdirSync(dir).some((e) => /^chromium/.test(e));
+  } catch (err) {
+    // A real filesystem answer ("no such directory") means genuinely absent, and
+    // carries a string `code`. Anything without one is a programmer error and
+    // must surface.
+    if (err && typeof err.code === "string") return false;
+    throw err;
   }
 }
 
