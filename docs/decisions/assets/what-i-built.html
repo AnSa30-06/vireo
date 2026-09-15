@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vireo — what I built, and what I took from Cobi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  img, svg { display: block; max-width: 100%; }
+
+  :root {
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    /* Vireo's own palette, read off the running app rather than invented. */
+    --bg: #08090A;
+    --surface: #0E0F11;
+    --panel: #16181C;
+    --border: #24262B;
+    --text: #F2F3F5;
+    --muted: #8A8F98;
+    --subtle: #5A5F68;
+    --accent: #3ECF8E;
+    --warn: #E0A33E;
+    --danger: #E5674E;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    display: flex; justify-content: center;
+    padding: 32px 24px 64px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .canvas { width: 1000px; background: var(--surface); border: 1px solid var(--border); }
+
+  /* entrance stagger */
+  .r { opacity: 0; transform: translateY(14px); animation: rise .55s cubic-bezier(.2,.7,.3,1) forwards; }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  /* Somebody who asked not to see motion gets the finished page, not a blank one. */
+  @media (prefers-reduced-motion: reduce) {
+    .r { opacity: 1; transform: none; animation: none; }
+    .col li { transition: none; }
+  }
+
+  /* ── print / PDF ───────────────────────────────────────
+     🔴 .r STARTS AT opacity 0. A renderer that captures the page before the
+     animation finishes - which is exactly what a headless print does - would
+     produce a completely blank document, and it would look like the CSS failed
+     rather than like a timing problem. Forcing the finished state is what makes
+     the PDF safe to generate at any moment.
+     The page is sized to the canvas so the whole thing is ONE tall page, rather
+     than A4 slicing a column of list items in half. */
+  /* Deliberately taller than the content. The build script crops the page down
+     to where the ink actually stops, so the document is one page of exactly the
+     right height whatever it grows to. Guessing this number put the footer on a
+     second, otherwise-empty page. */
+  @page { size: 264.6mm 560mm; margin: 0; }
+  @media print {
+    body { padding: 0; display: block; background: var(--surface); }
+    .canvas { width: 1000px; border: 0; margin: 0 auto; box-shadow: none; }
+    .r { opacity: 1 !important; transform: none !important; animation: none !important; }
+    .col li:hover { transform: none; }
+    /* Keep the dark ground. This is a screen document that happens to be a PDF;
+       a white background would strip the palette it is explaining. */
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .cols, .col, .says, .nums, .n, .fact { break-inside: avoid; }
+  }
+
+  /* ── masthead ─────────────────────────────────────────── */
+  .top { padding: 44px 52px 36px; border-bottom: 1px solid var(--border); }
+  .mark { display: flex; align-items: center; gap: 10px; margin-bottom: 26px; }
+  .mark span { font-family: var(--font-mono); font-size: 13px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+  h1 { font-size: 42px; line-height: 1.12; font-weight: 700; letter-spacing: -.022em; max-width: 19ch; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .stand { margin-top: 18px; font-size: 17px; line-height: 1.6; color: var(--muted); max-width: 62ch; }
+
+  /* ── the gap ──────────────────────────────────────────── */
+  .gap { padding: 40px 52px; border-bottom: 1px solid var(--border); background: var(--bg); }
+  .kicker { font-family: var(--font-mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--subtle); margin-bottom: 20px; }
+  .says { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+  .says > div { background: var(--panel); padding: 22px 24px; }
+  .says h3 { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--subtle); margin-bottom: 12px; }
+  .says p { font-size: 16px; line-height: 1.55; }
+  .says .q { color: var(--text); }
+  .facts { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .fact { font-size: 13.5px; color: var(--muted); background: var(--panel); border: 1px solid var(--border); padding: 8px 13px; }
+  .fact b { color: var(--danger); font-weight: 600; font-family: var(--font-mono); }
+
+  /* ── two columns ──────────────────────────────────────── */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); }
+  .col { background: var(--surface); padding: 38px 40px 42px; }
+  .col h2 { font-size: 21px; font-weight: 700; letter-spacing: -.01em; margin-bottom: 6px; }
+  .col .sub { font-size: 14px; color: var(--muted); line-height: 1.55; margin-bottom: 26px; }
+  .col ol { list-style: none; counter-reset: n; }
+  .col li { counter-increment: n; position: relative; padding: 0 0 18px 34px; transition: transform .18s ease; }
+  .col li:hover { transform: translateX(3px); }
+  .col li::before {
+    content: counter(n, decimal-leading-zero);
+    position: absolute; left: 0; top: 1px;
+    font-family: var(--font-mono); font-size: 11px; color: var(--subtle);
+  }
+  .col li strong { display: block; font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+  .col li span { font-size: 13.5px; line-height: 1.55; color: var(--muted); }
+  .took h2 { color: var(--text); }
+  .took li strong::after { content: ""; }
+  .fixed h2 { color: var(--accent); }
+  .fixed li strong { color: var(--accent); }
+
+  /* ── numbers ──────────────────────────────────────────── */
+  .nums { padding: 36px 52px 40px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 28px; }
+  .n .v { font-family: var(--font-mono); font-size: 34px; font-weight: 700; letter-spacing: -.02em; color: var(--accent); }
+  .n .l { margin-top: 7px; font-size: 12.5px; line-height: 1.45; color: var(--muted); }
+
+  /* ── footer ───────────────────────────────────────────── */
+  .foot { padding: 26px 52px 34px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: baseline; gap: 24px; }
+  .foot p { font-size: 13px; color: var(--subtle); line-height: 1.6; }
+  .foot code { font-family: var(--font-mono); color: var(--muted); font-size: 12.5px; }
+</style>
+</head>
+<body>
+<div class="canvas">
+
+  <header class="top r" style="animation-delay:.05s">
+    <div class="mark">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3ECF8E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5l8 15 8-15"/></svg>
+      <span>Vireo 1.3.0</span>
+    </div>
+    <h1>I cloned what Cobi <em>sells</em>, and fixed what it <em>does</em>.</h1>
+    <p class="stand">Vireo reads your customer spreadsheets and hands you a short list of things to act on this week. Every item carries the evidence that produced it, an owner, a due date and a status. If it cannot answer you, it says so instead of inventing a number.</p>
+  </header>
+
+  <section class="gap r" style="animation-delay:.14s">
+    <div class="kicker">What I found when I read all 66 pages of their documentation</div>
+    <div class="says">
+      <div>
+        <h3>Their marketing says</h3>
+        <p class="q">“AI Decision Stack for Customer Intelligence. Cobi reads their actual behaviour and shows you exactly what to do about it.”</p>
+      </div>
+      <div>
+        <h3>Their documentation says</h3>
+        <p class="q">“An AI-powered data analytics platform that lets you ask questions about your data in plain English, no SQL required.”</p>
+      </div>
+    </div>
+    <div class="facts">
+      <div class="fact">The word “decision” appears <b>0</b> times in their docs</div>
+      <div class="fact">Their “Act” pillar is labelled <b>Coming next</b></div>
+      <div class="fact"><b>30</b> integrations advertised, <b>3</b> documented</div>
+      <div class="fact">Recommendations return bare IDs, <b>no reason, no score</b></div>
+    </div>
+  </section>
+
+  <div class="cols">
+    <div class="col took r" style="animation-delay:.22s">
+      <h2>What I took from them</h2>
+      <p class="sub">Their surface is good, and most of it is what people pay for. I built all of it.</p>
+      <ol>
+        <li><strong>Ask in plain English</strong><span>Type a question about your customers, get an answer back.</span></li>
+        <li><strong>Saved segments</strong><span>Groups of customers built from rules. Describe a group in words and it writes the rules for you.</span></li>
+        <li><strong>Metrics, charts and dashboards</strong><span>Save a number, put it on a board, come back to it.</span></li>
+        <li><strong>Stories</strong><span>A report you can run again, on a weekly schedule, and export.</span></li>
+        <li><strong>An embeddable question box</strong><span>Put it on another website with one line of HTML.</span></li>
+        <li><strong>Data scopes</strong><span>A key can only read certain tables, and only the rows belonging to one customer.</span></li>
+        <li><strong>Customer state labels</strong><span>At risk, Dormant, Power user, Upsell ready, and the rest.</span></li>
+        <li><strong>The dot grid</strong><span>Their single best idea. One dot is one person, so “36 of 120” is a picture.</span></li>
+      </ol>
+    </div>
+
+    <div class="col fixed r" style="animation-delay:.3s">
+      <h2>What I changed</h2>
+      <p class="sub">Their method is measured to fail on real data. These are the differences that matter.</p>
+      <ol>
+        <li><strong>No free-form SQL</strong><span>Their approach scores 86% in tests and 0–6% on real company databases. Vireo uses a fixed list of nine questions, each with a query written by hand.</span></li>
+        <li><strong>“I cannot answer that” is a real answer</strong><span>It refuses, and shows you what it checked. A wrong number that looks right does more damage than ten right ones repair.</span></li>
+        <li><strong>Every number opens onto its evidence</strong><span>One click from the figure to the rows it counted.</span></li>
+        <li><strong>A decision is a record, not an alert</strong><span>It has an owner, a due date, a status and an outcome. It comes back if you ignore it.</span></li>
+        <li><strong>Definitions live next to the number</strong><span>Wrong figure? Edit what it counted, right there. Cobi makes you leave and edit a block of prose.</span></li>
+        <li><strong>A scope cannot widen quietly</strong><span>Their own docs admit deleting a scope exposes more data. Here, widening one names the live keys and asks first.</span></li>
+        <li><strong>Charts say what they left out</strong><span>A capped chart prints how many points are missing, so the picture never quietly disagrees with the number above it.</span></li>
+        <li><strong>It works with no internet and no AI model</strong><span>Answers fall back to keyword matching, and say that is what happened.</span></li>
+      </ol>
+    </div>
+  </div>
+
+  <section class="nums r" style="animation-delay:.38s">
+    <!-- The real figure is in the markup. The count-up sets it to 0 and climbs
+         back, so a reader with no JavaScript, or a screenshot taken before the
+         animation runs, still sees the number rather than a row of zeros. The
+         numbers are the content here; animating them must not be able to hide
+         them. -->
+    <div class="n"><div class="v" data-to="455">455</div><div class="l">tests, all passing</div></div>
+    <div class="n"><div class="v" data-to="70">70</div><div class="l">working routes</div></div>
+    <div class="n"><div class="v" data-to="14">14</div><div class="l">screens built new</div></div>
+    <div class="n"><div class="v" data-to="66">66</div><div class="l">of their pages read</div></div>
+    <div class="n"><div class="v" data-to="3">3</div><div class="l">security holes closed</div></div>
+  </section>
+
+  <footer class="foot r" style="animation-delay:.46s">
+    <p>The three security holes were already there before this work. Any website could have made changes to your workspace, the app could be framed by any page, and editing a data scope could widen it under a live key. All three were found by attacking a running copy, not by reading the code.</p>
+    <p><code>github.com/AnSa30-06/vireo</code></p>
+  </footer>
+
+</div>
+
+<script>
+  // Counter-ups. The figure is already correct in the markup, so this only ever
+  // makes it briefly lower and then puts it back. Every branch below ends with
+  // the true number on screen.
+  const run = (el) => {
+    const to = +el.dataset.to, t0 = performance.now(), ms = 900;
+    const step = (t) => {
+      const p = Math.min(1, (t - t0) / ms);
+      el.textContent = p < 1 ? Math.round(to * (1 - Math.pow(1 - p, 3))) : to;
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+
+  const nums = document.querySelectorAll('[data-to]');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (reduced || !('IntersectionObserver' in window)) {
+    // Nothing to do: the markup already shows the right figures.
+  } else {
+    const io = new IntersectionObserver((es) => {
+      for (const e of es) if (e.isIntersecting) { run(e.target); io.unobserve(e.target); }
+    }, { threshold: .4 });
+    nums.forEach((el) => io.observe(el));
+    // A belt-and-braces pass. An observer that never fires - a snapshot
+    // renderer, an odd scroll container, a print - would otherwise leave the
+    // animation half-done. Two seconds in, anything still not at its final
+    // value is simply set to it.
+    setTimeout(() => nums.forEach((el) => { if (el.textContent !== el.dataset.to) el.textContent = el.dataset.to; }), 2000);
+  }
+</script>
+</body>
+</html>

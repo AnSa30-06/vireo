@@ -24,10 +24,16 @@ no internet and no model. These pages are the longer version.
 
 | | |
 |---|---|
+| **[What everything does](what-everything-does.md)** | The demo company and every feature, in simple English. Start here if you want the whole picture on one page. |
 | **[Getting started](getting-started.md)** | Install to your first handled decision. About 15 minutes. |
 | [How it works](how-it-works.md) | What the software works out, and what the AI does. |
 | [Importing your data](importing-data.md) | The six files, every column, and where to get them. |
 | [The demo company](demo-company.md) | The made-up customers, and what is planted in them. |
+| [The interface](the-interface.md) | The ten screens, and the things that look like bugs and are not. |
+
+**One page, no reading:**
+[what-i-built.html](assets/what-i-built.html) · [the same as a PDF](assets/what-i-built.pdf) —
+what was cloned from Cobi, what was changed, and why.
 
 ## The screens
 
