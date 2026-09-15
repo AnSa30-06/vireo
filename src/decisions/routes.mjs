@@ -191,10 +191,20 @@ export const decisionRoutes = {
     const files = Array.isArray(body?.files) ? body.files : [];
     if (!files.length) return bad("no files were sent");
 
+    // 🔴 BATCHING, AND WHY IT IS NOT OPTIONAL. readBody() in server.mjs caps a
+    // request at 8 MB and base64 inflates bytes by about a third, so a drop of
+    // more than roughly 5 MB has to arrive in several requests. The importer
+    // needs every file present at once - accounts.csv is meaningless without
+    // usage_daily.csv - so the folder is cleared only on the FIRST batch, and
+    // the import runs only on the LAST. An earlier version cleared on every
+    // call, which silently deleted batch one when batch two arrived.
+    const append = body?.append === true;
+    const final = body?.final !== false;
+
     const ALLOWED = new Set([".csv", ".xlsx", ".xls", ".json", ".tsv"]);
     return withDb((db, id) => {
       const dir = path.join(workspace.dirFor(id), "dropped");
-      fs.rmSync(dir, { recursive: true, force: true });
+      if (!append) fs.rmSync(dir, { recursive: true, force: true });
       fs.mkdirSync(dir, { recursive: true });
 
       const written = [];
@@ -225,9 +235,12 @@ export const decisionRoutes = {
         written.push({ name, bytes: buf.length });
       }
 
-      if (!written.length) {
+      if (!written.length && !append) {
         return bad("none of those files could be imported", { rejected });
       }
+
+      // More batches are still coming: hold the files and import nothing yet.
+      if (!final) return ok({ staged: written.length, written, rejected });
 
       const r = importFolder(db, dir, { workspaceDir: workspace.dirFor(id) });
       // `rejected` rides along on success too: importing three of four files and

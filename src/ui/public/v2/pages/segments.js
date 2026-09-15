@@ -18,10 +18,10 @@
 //
 // WHAT IS AND IS NOT WIRED, stated here because the screen states it too:
 //
-//   * SAVING IS NOT WIRED. This build exposes 31 actions under /x/ and not one of them
-//     stores a named rule. See SEGMENTS below — it is the only path a save takes, it
-//     throws, and the throw is rendered verbatim. Segments built here are held in memory
-//     for this window only and every row says so.
+//   * SAVING IS NOT WIRED. Every handler in src/decisions/routes.mjs was read, and not
+//     one of them stores a named rule. See SEGMENTS below — it is the only path a save
+//     takes, it throws, and the throw is rendered verbatim. Segments built here are held
+//     in memory for this window only and every row says so.
 //   * MATCHING AND COUNTING ARE REAL. Every customer, every field and every number on
 //     this page comes from decisionsCustomers and decisionsSettingsGet. The matching runs
 //     locally over those rows. Nothing is sampled, seeded or rounded into existence.
@@ -1062,6 +1062,14 @@ function paintBuilder(mount, view, repaintSaved) {
       }),
     );
     rulesMount.append(add);
+
+    // The ceiling, stated where the fields are chosen rather than in a README.
+    // A user who goes looking for "industry" should find out why it is missing
+    // here, not conclude the field list is arbitrary.
+    const ceiling = el("p", "sg-muted");
+    ceiling.textContent =
+      "These are every field the customer list returns. Industry, segment, seat count, tenure and contacts exist on a customer but only one customer at a time, so counting a rule on them would need one request per customer and they are left out rather than guessed at.";
+    rulesMount.append(ceiling);
 
     paintPreview();
   }

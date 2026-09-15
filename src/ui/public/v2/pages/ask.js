@@ -490,7 +490,7 @@ const QUESTIONS = [
     text: "Which customers are at risk?",
     keywords: "risk churn leaving unhappy danger losing customers accounts at risk",
     routes: ["decisionsCustomers"],
-    async run(ctx) {
+    async run(ctx, env) {
       const r = await ctx.api("decisionsCustomers", { query: { label: "at_risk", sort: "arr" } });
       if (!r?.ok) return routeRefusal("decisionsCustomers", r);
       if (!r.hasRun) {
@@ -509,7 +509,10 @@ const QUESTIONS = [
         tone: rows.length ? "warn" : "plain",
         evidence: [
           ["Route", "decisionsCustomers with label=at_risk, sort=arr"],
-          ["As of", r.asOf ?? "not given"],
+          // decisionsCustomers returns no asOf of its own — it is the only list route that
+          // does not. The date comes from decisionsStatus, which reads the same pinned
+          // as-of value out of the same workspace, so the two cannot disagree.
+          ["As of", env.status?.asOf ?? "not given"],
           ["Customers returned", count(r.total)],
           ["Label set", Object.values(r.labels ?? {}).join(", ") || "not given"],
         ],
@@ -561,7 +564,7 @@ const QUESTIONS = [
         definition: `The window is the "${row.label}" threshold, currently ${count(days)} ${row.unit} (shipped default ${count(row.shipped)}). A customer is counted once by renewal date, whether or not it has an open decision.`,
         evidence: [
           ["Route", "decisionsCustomers with sort=renewal"],
-          ["As of", r.asOf ?? "not given"],
+          ["As of", env.status?.asOf ?? "not given"],
           ["Customers scanned", count(all.length)],
           ["Inside the window", count(within.length)],
           ["Renewal date already past", count(past)],
@@ -579,7 +582,7 @@ const QUESTIONS = [
     text: "Who has a payment problem?",
     keywords: "payment invoice billing failed card unpaid money owed collections",
     routes: ["decisionsCustomers", "decisionsList"],
-    async run(ctx) {
+    async run(ctx, env) {
       const [c, d] = await Promise.all([
         ctx.api("decisionsCustomers", { query: { label: "payment_issue", sort: "arr" } }),
         ctx.api("decisionsList", { query: { status: "open", kind: "payment_risk", sort: "priority" } }),
@@ -604,7 +607,7 @@ const QUESTIONS = [
         evidence: [
           ["Route", "decisionsCustomers with label=payment_issue, sort=arr"],
           ["Route", "decisionsList with status=open, kind=payment_risk"],
-          ["As of", c.asOf ?? "not given"],
+          ["As of", d.asOf ?? env.status?.asOf ?? "not given"],
           ["Customers labelled", count(c.total)],
           ["Open payment-risk decisions", count(d.total)],
         ],
@@ -656,7 +659,7 @@ const QUESTIONS = [
     text: "Whose numbers should I not trust?",
     keywords: "stale old data trust missing outdated gap usage feed broken",
     routes: ["decisionsCustomers"],
-    async run(ctx) {
+    async run(ctx, env) {
       const r = await ctx.api("decisionsCustomers", { query: { sort: "arr" } });
       if (!r?.ok) return routeRefusal("decisionsCustomers", r);
       if (!r.hasRun) {
@@ -682,7 +685,7 @@ const QUESTIONS = [
         tone: stale.length ? "warn" : "plain",
         evidence: [
           ["Route", "decisionsCustomers with sort=arr, filtered on staleData from the API"],
-          ["As of", r.asOf ?? "not given"],
+          ["As of", env.status?.asOf ?? "not given"],
           ["Customers scanned", count(all.length)],
           ["Flagged stale", count(stale.length)],
         ],

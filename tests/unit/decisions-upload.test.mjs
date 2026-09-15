@@ -97,6 +97,29 @@ test("a partial drop still reports what was refused", async () => {
   assert.equal(r.rejected[0].name, "notes.docx");
 });
 
+test("a batched drop keeps every batch and imports once at the end", async () => {
+  // 🔴 THE BUG THIS PINS. The route cleared its folder on every call, so a
+  // second batch deleted the first. That matters because the importer needs
+  // accounts.csv and usage_daily.csv together: batch them naively and the
+  // import fails with "a required file is absent" while both files were sent.
+  const first = await decisionRoutes.decisionsUpload({
+    body: { files: [GOOD_FILES[0]], append: false, final: false },
+  });
+  assert.equal(first.ok, true);
+  assert.equal(first.staged, 1, "a non-final batch must stage, not import");
+  assert.equal(first.report, undefined, "nothing should be imported until the last batch");
+
+  const second = await decisionRoutes.decisionsUpload({
+    body: { files: [GOOD_FILES[1]], append: true, final: true },
+  });
+  assert.equal(second.ok, true, `the batched import failed: ${second.error}`);
+  assert.ok(second.report, "the final batch must run the import");
+
+  // Both files must still be on disk - the proof that batch one survived.
+  const dropped = fs.readdirSync(path.join(WS_DIR, "dropped")).sort();
+  assert.deepEqual(dropped, ["accounts.csv", "usage_daily.csv"]);
+});
+
 test("sending no files says so plainly", async () => {
   const r = await decisionRoutes.decisionsUpload({ body: { files: [] } });
   assert.equal(r.ok, false);

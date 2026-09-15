@@ -20,9 +20,16 @@
 // exported empty, with no header row at all, which the importer rejects only
 // after you have gone and found the folder. So the drop zone runs the same
 // checks the parser will run, in this window, against the parser's own contract,
-// and says what is wrong BEFORE you go looking for the path. The import itself
-// then goes through the Windows folder picker (decisionsImportPick), which is the
-// only thing on this machine that can hand the server a real absolute path.
+// and says what is wrong BEFORE anything is imported.
+//
+// The drop then imports directly, through decisionsUpload. That route did not
+// exist when this page was first written, and the note here used to say the
+// Windows folder picker was "the only thing on this machine that can hand the
+// server a real absolute path" - true at the time, because a dropped File
+// deliberately reports C:\fakepath\... and carries no real path, so the bytes
+// had nowhere to go. decisionsUpload takes the bytes instead of a path and
+// hands the importer a folder, so dropping and picking now end in the same
+// place. The picker is still here for a folder you would rather browse to.
 //
 // No innerHTML anywhere. Customer file names, server paths and rejection reasons
 // are all untrusted text and every one of them goes in with textContent.
@@ -540,6 +547,76 @@ function reportTable(ctx, report) {
 /* ── import actions ─────────────────────────────────────────────────────── */
 
 /**
+ * The bytes of one File as base64, without blowing the stack.
+ *
+ * ⚠️ NOT String.fromCharCode(...bytes). Spreading a multi-megabyte Uint8Array
+ * into an argument list throws "Maximum call stack size exceeded" somewhere
+ * above a hundred thousand elements, and a CSV that size is ordinary here.
+ * Chunking is what makes it survive a real spreadsheet.
+ */
+async function fileToBase64(file) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = "";
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(binary);
+}
+
+/**
+ * Send dropped files to the server and import them.
+ *
+ * 🔴 WHY THIS EXISTS. A dropped File carries no real path - browsers report
+ * C:\fakepath\... deliberately - so decisionsImport, which takes a server-side
+ * folder, can never see it. Until decisionsUpload was added, a drop could be
+ * CHECKED in this window but not imported, and the only way through was the
+ * Windows folder picker.
+ *
+ * Batching is forced by the 8 MB request cap in server.mjs, and base64 inflates
+ * bytes by about a third. The folder is cleared on the first batch only and the
+ * import runs on the last, because the importer needs every file present at
+ * once: accounts.csv on its own is a failed import.
+ */
+async function uploadFiles(ctx, files) {
+  const list = Array.from(files ?? []);
+  if (!list.length) return { ok: false, error: "no files were dropped" };
+
+  // Comfortably under the 8 MB cap once base64 has added its third, with room
+  // for the JSON envelope.
+  const CAP = 4 * 1024 * 1024;
+  const batches = [];
+  let batch = [];
+  let size = 0;
+  for (const f of list) {
+    if (batch.length && size + f.size > CAP) {
+      batches.push(batch);
+      batch = [];
+      size = 0;
+    }
+    batch.push(f);
+    size += f.size;
+  }
+  if (batch.length) batches.push(batch);
+
+  let last = null;
+  for (let i = 0; i < batches.length; i++) {
+    const encoded = [];
+    for (const f of batches[i]) {
+      encoded.push({ name: f.name, base64: await fileToBase64(f) });
+    }
+    last = await ctx.api("decisionsUpload", {
+      method: "POST",
+      body: { files: encoded, append: i > 0, final: i === batches.length - 1 },
+    });
+    // A failed batch stops the run: continuing would import a partial folder
+    // and report success over the top of a real error.
+    if (!last?.ok) return last;
+  }
+  return last;
+}
+
+/**
  * Run one of the two import routes and paint the outcome.
  *
  * Resolves true only when data actually landed, because the caller re-renders on
@@ -700,7 +777,20 @@ function dropPanel(ctx, page) {
     try {
       const result = await inspectFiles(list, contract);
       page.lastCheck = { result, folderName }; // survives a re-render of this page
-      slot.replaceChildren(checkPanel(result, folderName));
+      const panel = checkPanel(result, folderName);
+
+      // The drop can now import directly. Before decisionsUpload existed this
+      // panel was a dead end that told you to go and find the folder yourself.
+      const label = `Import ${list.length} file${list.length === 1 ? "" : "s"}`;
+      const go = busyButton(label, "Importing…", "btn btn-primary", async () => {
+        const done = await runImport(ctx, slot, () => uploadFiles(ctx, list));
+        if (done) await page.reload("Imported.");
+      });
+      const row = el("div", "dx-actions");
+      row.append(go);
+      panel.append(row);
+
+      slot.replaceChildren(panel);
     } catch (err) {
       slot.replaceChildren(errBox("Those files could not be read in this window.", err?.message ?? err));
     }
@@ -758,7 +848,15 @@ function demoPanel(ctx, page) {
   const box = panel("Load the demo company");
 
   if (!names.length) {
-    box.append(el("p", "dx-sub", "The app did not list any demo datasets, so there is nothing to load."));
+    box.append(
+      el(
+        "p",
+        "dx-sub",
+        page.status
+          ? "The app did not list any demo datasets, so there is nothing to load."
+          : "The list of demo datasets comes from the app, and the app did not answer.",
+      ),
+    );
     return box;
   }
 
@@ -1015,7 +1113,10 @@ function workspacesPanel(ctx, page) {
   const list = page.status?.workspaces ?? [];
   const currentId = page.status?.workspace?.id ?? null;
 
-  if (!list.length) box.append(el("p", "dx-sub", "There are no workspaces yet."));
+  // "None" and "the app did not answer" are different facts, and saying the
+  // first when the second is true is how a screen starts lying quietly.
+  if (!page.status) box.append(el("p", "dx-sub", "The list of workspaces could not be read, so none are shown. Creating one still works."));
+  else if (!list.length) box.append(el("p", "dx-sub", "There are no workspaces yet."));
   for (const w of list) box.append(workspaceRow(ctx, page, w, currentId));
 
   const slot = el("div", "dx-slot");
