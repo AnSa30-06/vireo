@@ -21,6 +21,9 @@ import * as A from "./actions.mjs";
 import { tick, overdueDays } from "./followup.mjs";
 import { getSettings, setSettings, getMeta, setMeta } from "./db.mjs";
 import * as S from "./segments.mjs";
+import { metricsRoutes } from "./metrics.mjs";
+import { storyRoutes } from "./stories.mjs";
+import { embedRoutes } from "./embed.mjs";
 import { rules, editableThresholds, actionLabel } from "./rules.mjs";
 import { LABELS, severityRank } from "./situations.mjs";
 import { PATHS } from "../util/paths.mjs";
@@ -889,6 +892,17 @@ export const decisionRoutes = {
   async decisionsRules() {
     return withDb((db) => ok({ rules: rules(), thresholds: editableThresholds(getSettings(db)) }));
   },
+
+  // Feature areas that own their own storage and logic keep their routes beside
+  // that logic and are merged in here, the way segments.mjs already does its
+  // work in its own module. This file decides the SHAPE of a route; it is not
+  // meant to grow a copy of every feature's query.
+  //
+  // ⚠️ Their migrations must be appended to MIGRATIONS in db.mjs as well, or
+  // every route below queries a table that does not exist.
+  ...metricsRoutes,
+  ...storyRoutes,
+  ...embedRoutes,
 };
 
 /** Seed the two "previously dismissed" demo decisions. */

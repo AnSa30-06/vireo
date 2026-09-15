@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en" data-vireo-embed-widget="1">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vireo</title>
+    <!--
+      THE EMBEDDABLE WIDGET. This page is meant to be loaded inside an <iframe>
+      on somebody else's site. It is deliberately the thinnest thing that can
+      work:
+
+        * NO SHELL. No sidebar, no nav, no workspace switcher. The shell reads
+          the whole workspace to draw itself, and a widget that boots the shell
+          would be reading data the embed key may not be allowed to see before
+          the key has even been checked.
+
+        * NO SECOND ANSWERING ENGINE. Everything typed here goes to
+          decisionsEmbedAsk, which runs the same fixed ask catalogue the Ask
+          screen runs, against a database built from the key's data scope. There
+          is one matcher in this product and this is not a copy of it.
+
+        * NO INLINE SCRIPT. The app is served under
+          `script-src 'self'`, so a <script> block in this file would be blocked
+          and the widget would render as an empty page. The behaviour lives in
+          ./pages/embed.js, which boots its widget half only when it sees
+          data-vireo-embed-widget on the <html> element above.
+
+      ⚠️ WHAT THE QUERY STRING CAN AND CANNOT DO. It carries `key`, `scope` and
+      the app's per-launch token `t`. The KEY decides what may be read. `scope`
+      is only ever checked for AGREEMENT with the scope the key was issued for -
+      changing it makes the request fail and can never make it see more. See the
+      comment at the top of src/decisions/embed.mjs.
+    -->
+    <link rel="icon" href="../favicon.ico" sizes="any" />
+    <link rel="stylesheet" href="tokens.css" />
+    <style>
+      /* The host page owns the iframe's box, so this document fills it and
+         never scrolls a second time inside it. Everything else on screen is
+         drawn by tokens.css or by the page module. */
+      html,
+      body {
+        min-height: 100%;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font);
+      }
+      /* Shown only until the module replaces the body, and shown as real words
+         rather than a spinner: a widget that cannot start must say so even if
+         its script never arrives. */
+      .ew-boot {
+        padding: 24px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ew-boot">
+      Loading… If this message stays, Vireo is not running on this computer, or this page was
+      opened without its embed key.
+    </div>
+    <script type="module" src="./pages/embed.js"></script>
+  </body>
+</html>

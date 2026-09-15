@@ -12,6 +12,16 @@
 // how many have been applied; a start applies the rest inside one transaction.
 // Never edit a migration that has shipped - append a new one.
 import { DatabaseSync } from "node:sqlite";
+// ⚠️ A DELIBERATE IMPORT CYCLE, and it is safe for one specific reason.
+// These three modules import nowIso/getSettings/tx back from this file. ESM
+// finishes evaluating each of them before this file's body runs, so the three
+// constants exist by the time MIGRATIONS is built; and what they import back
+// are FUNCTION DECLARATIONS, which are hoisted, so their module bodies see
+// real bindings rather than a temporal-dead-zone error. It would break if any
+// of them ever CALLED one of those at module top level - none does.
+import { METRICS_MIGRATION } from "./metrics.mjs";
+import { STORY_MIGRATION } from "./stories.mjs";
+import { EMBED_MIGRATION } from "./embed.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { logger } from "../util/log.mjs";
@@ -256,6 +266,21 @@ export const MIGRATIONS = [
     updated_at TEXT NOT NULL
   );
   `,
+
+  // Feature areas that own storage keep their schema beside their code and are
+  // appended here. Each is a SEPARATE entry, never folded into an earlier one:
+  // a database that has already run migrations 0..n only runs what comes after,
+  // so editing an existing entry changes nothing on an installed workspace and
+  // silently leaves it a different shape from a fresh one.
+  //
+  // ⚠️ The eight tables these create - saved_metric, saved_chart, dashboard,
+  // dashboard_chart, story, story_run, embed_key, embed_scope - were checked for
+  // collisions against each other and against every table above before being
+  // appended. Two migrations creating the same table fails the whole upgrade
+  // transaction, and then no workspace opens at all.
+  METRICS_MIGRATION,
+  STORY_MIGRATION,
+  EMBED_MIGRATION,
 ];
 
 /**

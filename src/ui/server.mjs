@@ -104,6 +104,37 @@ function authorised(req) {
   return typeof t === "string" && t.length > 0 && crypto.timingSafeEqual(Buffer.from(t.padEnd(64).slice(0, 64)), Buffer.from(_token.padEnd(64).slice(0, 64)));
 }
 
+/**
+ * 🔴 THE CONTENT-TYPE CHECK IS A SECURITY CONTROL, NOT TIDINESS.
+ *
+ * A cross-origin `fetch` only escapes a CORS preflight while it stays
+ * "simple", and a JSON content-type is not simple - the browser preflights it,
+ * this server answers with no allow-headers, and the request never happens.
+ * That preflight was the only thing standing between any web page and this API.
+ *
+ * It was not actually load-bearing, because this function did not care what the
+ * content type was: it called JSON.parse on whatever arrived. So
+ *
+ *     fetch(url + "/x/decisionsWorkspaceDelete?t=" + token, {
+ *       method: "POST",
+ *       headers: { "content-type": "text/plain;charset=UTF-8" },
+ *       body: JSON.stringify({ id }),
+ *     })
+ *
+ * from `https://evil.example` is CORS-SIMPLE, skips the preflight entirely, and
+ * was measured returning HTTP 200 with the route executed. The attacker cannot
+ * READ the reply - there is no Access-Control-Allow-Origin header - but every
+ * WRITE lands, across all routes, deletes included. A token that leaks once,
+ * into a log or a shared screenshot, becomes remote control of the workspace.
+ *
+ * Requiring a JSON content-type puts the preflight back, and a preflight this
+ * server never answers is a request the browser never sends.
+ */
+function jsonContentType(req) {
+  const t = String(req.headers["content-type"] ?? "").split(";")[0].trim().toLowerCase();
+  return t === "application/json";
+}
+
 async function readBody(req) {
   const chunks = [];
   let size = 0;
@@ -115,6 +146,11 @@ async function readBody(req) {
     chunks.push(c);
   }
   if (!chunks.length) return undefined;
+  if (!jsonContentType(req)) {
+    // Named precisely, because the same message is what a developer sees when
+    // they forget the header on a legitimate call.
+    throw new Error("a request body must be sent as application/json");
+  }
   const text = Buffer.concat(chunks).toString("utf8");
   try {
     return JSON.parse(text);
@@ -177,8 +213,19 @@ function serveStatic(res, urlPath) {
     "content-type": type,
     "cache-control": "no-store",
     // The app is entirely self-contained; nothing may be loaded from the web.
+    //
+    // 🔴 frame-ancestors, and why it is not 'none'. Without it ANY website could
+    // put this whole app in an iframe - measured: no X-Frame-Options and no
+    // frame-ancestors were sent, so /v2/index.html framed cleanly from an
+    // unrelated origin. Framing plus a leaked token is somebody else's page
+    // driving this one.
+    //
+    // ⚠️ It is 'self' rather than 'none' because ONE page here is meant to be
+    // framed: the embeddable widget. Its own allowed-origin list is enforced
+    // server-side per embed key, which is the check that actually decides who
+    // may load it - this header is the blanket rule for everything else.
     "content-security-policy":
-      "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-src 'self' http://127.0.0.1:*",
+      "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-src 'self' http://127.0.0.1:*; frame-ancestors 'self'",
   });
   res.end(fs.readFileSync(file));
 }

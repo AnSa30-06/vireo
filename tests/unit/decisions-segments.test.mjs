@@ -60,9 +60,18 @@ const one = (field, op, value = "") => [{ rules: [{ field, op, value }] }];
 /* ── the migration ──────────────────────────────────────────────────────── */
 
 test("the segment table arrives as a NEW migration, leaving the shipped one untouched", () => {
-  assert.equal(MIGRATIONS.length, 2, "a new table needs a new appended migration, never an edit to migration 1");
-  assert.ok(!MIGRATIONS[0].includes("CREATE TABLE segment"), "migration 1 has shipped and must not mention segment");
-  assert.match(MIGRATIONS[1], /CREATE TABLE segment/);
+  // Stated as "exactly one entry creates it, and no earlier entry mentions it",
+  // NOT as a fixed MIGRATIONS.length. The original pinned the length at 2, which
+  // was true only while segments was the newest feature and broke the moment
+  // metrics, stories and embed were appended - a false failure that says nothing
+  // about whether a shipped migration was edited.
+  const carrying = MIGRATIONS.filter((sql) => sql.includes("CREATE TABLE segment"));
+  assert.equal(carrying.length, 1, `segment must be created by exactly one migration, found ${carrying.length}`);
+  const at = MIGRATIONS.indexOf(carrying[0]);
+  assert.ok(at > 0, "segment must not be created by migration 1, which has shipped");
+  for (let i = 0; i < at; i++) {
+    assert.ok(!MIGRATIONS[i].includes("CREATE TABLE segment"), `migration ${i + 1} has shipped and must not mention segment`);
+  }
 });
 
 test("a database already at version 1 upgrades without losing its data", () => {
@@ -73,9 +82,13 @@ test("a database already at version 1 upgrades without losing its data", () => {
   db.prepare("INSERT INTO meta (key, value) VALUES ('schema_version', '1')").run();
   db.prepare("INSERT INTO account (id, name, arr) VALUES ('a1', 'Northwind', 1)").run();
 
+  // Every migration after the first is applied, whatever their number is today.
+  // Pinning to:2 applied:1 described the world when segments was the only one.
   const r = migrate(db);
-  assert.deepEqual({ from: r.from, to: r.to, applied: r.applied }, { from: 1, to: 2, applied: 1 });
-  assert.equal(getMeta(db, "schema_version"), "2");
+  assert.equal(r.from, 1, "the database starts at the shipped version");
+  assert.equal(r.to, MIGRATIONS.length, "it must end up fully up to date");
+  assert.equal(r.applied, MIGRATIONS.length - 1, "every later migration must run");
+  assert.equal(getMeta(db, "schema_version"), String(MIGRATIONS.length));
   assert.equal(db.prepare("SELECT COUNT(*) n FROM segment").get().n, 0);
   assert.equal(db.prepare("SELECT name FROM account WHERE id = 'a1'").get().name, "Northwind");
   db.close();

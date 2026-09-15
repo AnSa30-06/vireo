@@ -125,6 +125,11 @@ const NAV = [
   },
   { id: "ask", label: "Ask", paths: ["M20 15a3 3 0 0 1-3 3H9l-4.5 3V6a3 3 0 0 1 3-3h9.5a3 3 0 0 1 3 3z"] },
   { id: "segments", label: "Segments", paths: ["M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z", "M12 3v9h9"] },
+  // Saved analysis. These sit after Segments because they are things you build
+  // from the data rather than things the app hands you.
+  { id: "dashboards", label: "Dashboards", paths: ["M4 4h7v7H4z", "M13 4h7v4.5h-7z", "M13 10.5h7V20h-7z", "M4 13h7v7H4z"] },
+  { id: "stories", label: "Stories", paths: ["M5 4.5h11a2 2 0 0 1 2 2V21l-3.5-2.5L11 21l-3.5-2.5L4 21V6.5a2 2 0 0 1 1-2z", "M8 9h7", "M8 13h5"] },
+  { id: "embed", label: "Embed", paths: ["M9 8.5L4.5 12 9 15.5", "M15 8.5L19.5 12 15 15.5", "M13.5 5l-3 14"] },
   {
     id: "data",
     label: "Data",
