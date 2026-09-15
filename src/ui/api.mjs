@@ -596,7 +596,12 @@ export const routes = {
       let problem = null;
       try {
         const { webSearch } = await import("../tools/search.mjs");
-        const t = await webSearch("omni agent connectivity check", { provider: body.id, count: 1 });
+        // Ordinary words on purpose: the query only has to come back with at
+        // least one result, and it LEAVES THE MACHINE - it reaches whichever
+        // search provider is being tested, and lands in their logs. It used to
+        // carry the name this product was forked from, which told a third party
+        // something untrue about what they were serving.
+        const t = await webSearch("connectivity check example", { provider: body.id, count: 1 });
         works = t.results.length > 0;
         if (!works) problem = "the provider accepted the key but returned no results";
       } catch (err) {

@@ -334,5 +334,5 @@ export function renderSummary(result) {
 }
 
 export function renderDoctor(result) {
-  return ["", "OMNI AGENT HEALTH CHECK", "", ...result.rows.map(renderRow), "", renderSummary(result)].join("\n");
+  return ["", "VIREO HEALTH CHECK", "", ...result.rows.map(renderRow), "", renderSummary(result)].join("\n");
 }

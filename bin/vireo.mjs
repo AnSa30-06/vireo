@@ -156,7 +156,7 @@ async function main() {
       await ensureReady({ quiet: asJson }).catch(() => {});
       if (!asJson) {
         say("");
-        say("OMNI AGENT HEALTH CHECK");
+        say("VIREO HEALTH CHECK");
         say("");
       }
       const result = await runDoctor({
