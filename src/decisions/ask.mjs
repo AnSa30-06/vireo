@@ -984,6 +984,54 @@ function recordCall(db, row) {
   }
 }
 
+/* ── remembering that the gateway is down ───────────────────────────────── */
+
+/**
+ * How long to stop dialling a model that just failed.
+ *
+ * 🔴 WHY THIS EXISTS. On an install with no key, no gateway or no network,
+ * EVERY question paid the full model round trip before falling back to keyword
+ * matching — measured at 6 to 10 seconds when the connection failed fast, and up
+ * to the 30-second timeout when the gateway hung instead. The answer was always
+ * going to come from keywords; the wait bought nothing at all. Someone with no
+ * key would conclude the feature is broken rather than offline.
+ *
+ * Ninety seconds is short on purpose. It has to be long enough to spare a person
+ * typing several questions in a row, and short enough that starting the gateway
+ * and asking again just works, without anyone having to know this cooldown
+ * exists.
+ */
+const MODEL_DOWN_MS = 90_000;
+
+let modelDownUntil = 0;
+let modelDownReason = "";
+
+/**
+ * ⚠️ REAL WALL CLOCK, deliberately, NOT the engine's nowIso(db).
+ *
+ * Everything the engine STAMPS goes through nowIso so demo mode can advance the
+ * date by hand. This is not a stamp: it measures how long ago a network call
+ * failed. Pinning the demo clock must not convince the app that a gateway which
+ * failed a moment ago failed a year ago, or the cooldown would never expire.
+ */
+function noteModelDown(reason) {
+  modelDownUntil = Date.now() + MODEL_DOWN_MS;
+  modelDownReason = reason;
+}
+
+/** Null when the model is worth trying, otherwise why it is being skipped. */
+function modelIsDown() {
+  if (Date.now() >= modelDownUntil) return null;
+  const secs = Math.ceil((modelDownUntil - Date.now()) / 1000);
+  return `the model failed ${modelDownReason ? `(${modelDownReason})` : ""} and is not being called again for ${secs}s`;
+}
+
+/** Tests need a clean slate; nothing else should call this. */
+export function _resetModelDown() {
+  modelDownUntil = 0;
+  modelDownReason = "";
+}
+
 /**
  * Ask the model which intent this is.
  *
@@ -1009,6 +1057,7 @@ async function pickWithModel({ db, question, env, complete }) {
   } catch (err) {
     const error = String(err?.message ?? err).slice(0, 300);
     recordCall(db, { valid: false, error });
+    noteModelDown(error);
     return { ok: false, error };
   }
 
@@ -1079,7 +1128,15 @@ export async function answerQuestion(db, { question, noModel = false, complete =
     };
   }
 
-  const picked = noModel ? { ok: false, error: "the model was not used for this question" } : await pickWithModel({ db, question: q, env, complete });
+  // A model that failed moments ago is not dialled again: the answer would come
+  // from keywords either way, and the wait is pure cost. The reason is carried
+  // into the evidence so the page still says why no model was used.
+  const downReason = noModel ? null : modelIsDown();
+  const picked = noModel
+    ? { ok: false, error: "the model was not used for this question" }
+    : downReason
+      ? { ok: false, error: downReason }
+      : await pickWithModel({ db, question: q, env, complete });
 
   let intent = null;
   let rawParams = {};
