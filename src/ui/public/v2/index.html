@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vireo</title>
+    <link rel="icon" href="../favicon.ico" sizes="any" />
+    <link rel="icon" href="../logo.svg" type="image/svg+xml" />
+    <!--
+      tokens.css is the whole design system for this surface: reset, base type,
+      palette, and the component classes the pages share (.panel .btn .chip
+      .empty .err .skeleton). ../app.css is deliberately NOT linked - it is the
+      light chat-app theme, it redefines --bg, --accent and --radius, and its
+      components are keyed on --ink / --line / --bg-raise, which tokens.css does
+      not define. Linking both paints white buttons onto a #0E0F11 page.
+    -->
+    <link rel="stylesheet" href="tokens.css" />
+    <style>
+      /* Shell chrome ONLY - the sidebar, the workspace switcher and the top
+         bar. Everything else on screen is drawn by tokens.css or by the page
+         module, and nothing here restates a rule that already exists there:
+         this block loads after tokens.css, so anything it repeats wins, and a
+         redefined .btn would quietly beat the real one.
+
+         Inline <style> is allowed; inline <script> is not (style-src has
+         'unsafe-inline', script-src is 'self'). */
+
+      /* The three panes never scroll as a unit; .v2-content scrolls alone. */
+      body { overflow: hidden; }
+      #app { display: flex; height: 100vh; min-height: 0; }
+
+      /* ── sidebar ─────────────────────────────────────────────────────── */
+      .v2-side {
+        width: 200px;
+        flex: 0 0 200px;
+        display: flex;
+        flex-direction: column;
+        padding: var(--s3) var(--s2);
+        border-right: 1px solid var(--border);
+        min-height: 0;
+      }
+      .v2-brand { display: flex; align-items: center; gap: var(--s2); padding: 4px 6px var(--s3); }
+      .v2-brand .v2-mark { display: flex; color: var(--accent); }
+      .v2-brand b { font-size: var(--fs-lg); font-weight: 600; letter-spacing: -0.01em; }
+
+      .v2-ws { position: relative; }
+      .v2-ws-btn {
+        display: flex; align-items: center; gap: 6px; width: 100%;
+        background: transparent; border: 1px solid var(--border);
+        border-radius: var(--radius-sm); padding: 6px 8px;
+        text-align: left; font-size: var(--fs-sm);
+      }
+      .v2-ws-btn:hover { background: var(--panel-2); }
+      .v2-ws-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .v2-ws-caret { color: var(--muted); font-size: var(--fs-xs); }
+      .v2-ws-panel {
+        position: absolute; z-index: 20; top: calc(100% + 6px); left: 0; right: -64px;
+        background: var(--panel); border: 1px solid var(--border);
+        border-radius: var(--radius); padding: var(--s2);
+        display: flex; flex-direction: column; gap: 4px;
+      }
+      .v2-ws-item {
+        display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+        text-align: left; background: transparent; border: 1px solid transparent;
+        border-radius: var(--radius-sm); padding: 6px 8px; font-size: var(--fs-sm);
+      }
+      .v2-ws-item:hover { border-color: var(--border); }
+      .v2-ws-item.current { background: var(--panel-2); }
+      .v2-ws-item small { color: var(--muted); font-size: var(--fs-xs); }
+      .v2-ws-sep { height: 1px; background: var(--border-soft); margin: var(--s1) 0; }
+      .v2-ws-new { display: flex; gap: 6px; align-items: center; }
+      .v2-ws-new .v2-input { flex: 1; min-width: 0; }
+
+      /* tokens.css styles buttons but not text inputs, and the shell needs two. */
+      .v2-input {
+        background: var(--bg); border: 1px solid var(--border); color: var(--text);
+        border-radius: var(--radius-sm); padding: 6px 9px; font-size: var(--fs-sm);
+      }
+
+      .v2-nav { display: flex; flex-direction: column; gap: 2px; margin-top: var(--s3); }
+      .v2-nav-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 7px 8px; border: 0; background: transparent;
+        border-radius: var(--radius-sm); color: var(--muted);
+        font-size: var(--fs-md); text-align: left;
+      }
+      .v2-nav-item:hover { color: var(--text); }
+      /* The active row is the filled rectangle, and it is the only fill in the
+         sidebar - which is what makes it read as the current place. */
+      .v2-nav-item.active { background: var(--panel); color: var(--text); }
+      .v2-nav-item svg { width: 18px; height: 18px; flex: 0 0 18px; }
+
+      .v2-side-foot { margin-top: auto; }
+
+      /* ── main ────────────────────────────────────────────────────────── */
+      .v2-main { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+      .v2-top {
+        display: flex; align-items: center; gap: var(--s2);
+        padding: var(--s3) var(--s5); border-bottom: 1px solid var(--border);
+      }
+      /* h1 is 28px in tokens.css; in a title bar it is a label, not a headline. */
+      .v2-top h1 { font-size: var(--fs-lg); letter-spacing: 0; }
+      .v2-grow { flex: 1; }
+      .v2-content { flex: 1; min-height: 0; overflow: auto; padding: var(--s5); }
+
+      /* The shell's own loading, empty and error boxes use .skeleton / .empty /
+         .err from tokens.css; these two only set the width they sit in. */
+      .v2-state { max-width: 640px; }
+      .v2-state .v2-ws-new { margin-top: var(--s4); justify-content: center; }
+      .v2-state .skeleton.block + .skeleton.block { margin-top: var(--s3); }
+      /* .err styles its own <code>; .empty does not, and the import error that
+         explains a missing page is worth reading. */
+      .empty code { display: block; margin-top: var(--s3); color: var(--muted); word-break: break-word; }
+    </style>
+  </head>
+  <body>
+    <!-- The shell builds everything inside this element. -->
+    <div id="app"></div>
+    <script src="shell.js" type="module"></script>
+  </body>
+</html>
