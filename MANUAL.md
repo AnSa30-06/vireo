@@ -46,7 +46,7 @@ Everything runs on your own computer.
 
 To check you got the right file, run `Get-FileHash .\VireoSetup-1.3.0.exe -Algorithm SHA256`
 in PowerShell. It should print
-`701AFE530BBE95449F735DB86C212612424A8E27E21F0BE97C4AC26C78D76D91`.
+`21F51165829F2780B346195E7E913C03DA17E0DBE32333B81594D841A3EFFA61`.
 
 ### 2. Windows will warn you. This is expected.
 
@@ -67,13 +67,15 @@ No administrator password is needed. It installs just for you.
 When the installer finishes it opens a setup window. **This part takes ten to
 thirty minutes and downloads about 4 GB.** It only ever happens once.
 
-> **Already have OmniAgent installed?** Vireo is a fork of it, and the three big
-> components are identical. Vireo finds them and shares them, so the download is
-> skipped entirely and setup takes seconds.
+> **Already have OmniAgent installed?** It makes no difference. Vireo downloads
+> its own copy of everything and never reads another program's install.
 >
-> **Close OmniAgent first.** While it is open its model gateway holds the port
-> Vireo needs, so the components cannot be shared and Vireo downloads its own
-> copy instead. Setup says so plainly when this happens.
+> Earlier versions did share those files to skip the download. That was removed,
+> because both programs start a model gateway on the same port and the sharing
+> made Vireo's behaviour depend on whether OmniAgent happened to be running.
+>
+> **Do not run both at the same time.** They each want port 20129 for their own
+> gateway. Close one before you open the other.
 
 It is fetching the three big pieces that are too large to put in a download: the
 model gateway, the agent engine, and a web browser for it to drive.

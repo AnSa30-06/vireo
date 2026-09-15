@@ -58,10 +58,10 @@ Get-FileHash .\VireoSetup-1.3.0.exe -Algorithm SHA256
 It should print:
 
 ```
-701AFE530BBE95449F735DB86C212612424A8E27E21F0BE97C4AC26C78D76D91
+21F51165829F2780B346195E7E913C03DA17E0DBE32333B81594D841A3EFFA61
 ```
 
-The portable zip is `E636F86A989D727D2E9265FD15973FC91BB99C3700875B07A62BBAA1853C5D91`.
+The portable zip is `792DA29E864374813E7443E8BC6723FBCCD3D059751D6E43DC7ACEC00AE8DE49`.
 
 If either prints anything else, delete the file and download it again.
 
@@ -114,7 +114,9 @@ Extract it anywhere, run `setup.bat` once, then `app.bat` to open the app (or `s
 for the terminal interface). Nothing is written outside the folder and your own data
 directory, and nothing is added to the registry or the Start Menu.
 
-Its SHA-256 is `0057FDCBC09B82EA7D3B317C1EA8AE98FD802D1124E7AF2843746EE673B9C105`.
+Its SHA-256 is given once, in
+[Checking you got the right file](#checking-you-got-the-right-file) above. It used to be
+repeated here and the two copies went out of step, which is worse than not stating it.
 
 ---
 
