@@ -164,6 +164,81 @@ export const decisionRoutes = {
     return decisionRoutes.decisionsImport({ body: { path: picked.paths[0] } });
   },
 
+  /**
+   * Import files the user DROPPED on the page, rather than a folder on disk.
+   *
+   * 🔴 WHY THIS ROUTE HAS TO EXIST. `decisionsImport` takes a server-side folder
+   * path, and `decisionsImportPick` opens a native folder dialog. A browser can
+   * supply neither: a dropped File has no real path (browsers report
+   * `C:\fakepath\...` on purpose), so before this route drag-and-drop could not
+   * work at all, no matter what the page did. The bytes had nowhere to go.
+   *
+   * Files land in a scratch folder inside the workspace, which `importFolder`
+   * then reads exactly as it reads any other folder - so dropped files and
+   * picked folders go down one code path, not two.
+   *
+   * ⚠️ FILENAMES HERE COME FROM A BROWSER AND ARE UNTRUSTED. `path.basename`
+   * plus the extension allowlist is what stops `../../../config.json` being
+   * written outside the scratch folder. Never join a caller-supplied name onto
+   * a directory without stripping it first.
+   *
+   * The 8 MB cap in server.mjs readBody() applies to the whole request, and
+   * base64 inflates bytes by about a third. The page therefore sends files in
+   * batches; this route reports the limit plainly rather than failing with a
+   * generic parse error.
+   */
+  async decisionsUpload({ body }) {
+    const files = Array.isArray(body?.files) ? body.files : [];
+    if (!files.length) return bad("no files were sent");
+
+    const ALLOWED = new Set([".csv", ".xlsx", ".xls", ".json", ".tsv"]);
+    return withDb((db, id) => {
+      const dir = path.join(workspace.dirFor(id), "dropped");
+      fs.rmSync(dir, { recursive: true, force: true });
+      fs.mkdirSync(dir, { recursive: true });
+
+      const written = [];
+      const rejected = [];
+      for (const f of files) {
+        const name = path.basename(String(f?.name ?? "").trim());
+        if (!name || name.startsWith(".")) {
+          rejected.push({ name: String(f?.name ?? ""), why: "the file has no usable name" });
+          continue;
+        }
+        const ext = path.extname(name).toLowerCase();
+        if (!ALLOWED.has(ext)) {
+          rejected.push({ name, why: `${ext || "a file with no extension"} cannot be imported. Use CSV, TSV, XLSX or JSON.` });
+          continue;
+        }
+        let buf;
+        try {
+          buf = Buffer.from(String(f.base64 ?? ""), "base64");
+        } catch {
+          rejected.push({ name, why: "the file could not be decoded" });
+          continue;
+        }
+        if (!buf.length) {
+          rejected.push({ name, why: "the file is empty" });
+          continue;
+        }
+        fs.writeFileSync(path.join(dir, name), buf);
+        written.push({ name, bytes: buf.length });
+      }
+
+      if (!written.length) {
+        return bad("none of those files could be imported", { rejected });
+      }
+
+      const r = importFolder(db, dir, { workspaceDir: workspace.dirFor(id) });
+      // `rejected` rides along on success too: importing three of four files and
+      // saying nothing about the fourth is how a partial import passes for a
+      // complete one.
+      return r.ok
+        ? ok({ report: r.report, written, rejected })
+        : bad(r.error, { report: r.report, written, rejected });
+    });
+  },
+
   async decisionsImportReport() {
     return withDb((db) => {
       try {
