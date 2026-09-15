@@ -518,11 +518,33 @@ function emptyBox(heading, message) {
 }
 
 /** The error boundary's box. Always says WHAT failed, in the server's words. */
+/**
+ * Show a failure with a Retry that can actually succeed.
+ *
+ * 🔴 THE BUG THIS FIXES. Retry used to be `() => renderRoute()`. For the
+ * commonest failure - decisionsStatus not answering - renderRoute() re-reads
+ * the STALE `state.statusError` near the top and returns this same screen, so
+ * the button could never clear the error however many times it was pressed.
+ * Fixing the backend and pressing Retry still showed the old message; only a
+ * full page reload recovered. A retry that cannot retry is worse than no
+ * button, because it tells the reader the app is still broken when it is not.
+ *
+ * Clearing the flag and re-reading the status first is what makes it a retry
+ * rather than a repaint. It is safe for page-render failures too: re-fetching
+ * the status before re-rendering costs one request and keeps the sidebar honest.
+ */
 function showError(err, { heading = "Something went wrong" } = {}) {
   const box = el("div", "err v2-state");
   box.append(el("strong", null, heading));
   box.append(el("code", null, String(err?.message ?? err)));
-  box.append(button("Retry", "btn", () => renderRoute()));
+  const retry = button("Retry", "btn", async () => {
+    retry.disabled = true;
+    retry.textContent = "Retrying…";
+    state.statusError = null;
+    await refreshStatus();
+    renderRoute();
+  });
+  box.append(retry);
   ui.content.replaceChildren(box);
 }
 

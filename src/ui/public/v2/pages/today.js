@@ -22,7 +22,7 @@ export const title = "Today";
 
 /* ── tiny DOM helpers ───────────────────────────────────────────────────── */
 
-function el(tag, cls, text) {
+export function el(tag, cls, text) {
   const n = document.createElement(tag);
   if (cls) n.className = cls;
   if (text != null) n.textContent = text;
@@ -31,7 +31,7 @@ function el(tag, cls, text) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-function button(label, cls, onClick) {
+export function button(label, cls, onClick) {
   const b = el("button", `btn ${cls ?? ""}`, label);
   b.type = "button";
   b.onclick = onClick;
@@ -132,7 +132,7 @@ function duePill(ctx, d) {
   return el("span", "pill t2-nodate", "No due date");
 }
 
-function decisionCard(ctx, d) {
+export function decisionCard(ctx, d) {
   const card = el("button", "t2-card");
   card.type = "button";
   // A whole-card <button> gets keyboard focus and Enter for free, and there is nothing
@@ -179,7 +179,7 @@ function decisionCard(ctx, d) {
   return card;
 }
 
-function columnHeader() {
+export function columnHeader() {
   const h = el("div", "t2-card-grid col-head");
   h.append(el("div", null, ""));
   h.append(el("div", null, "Decision cards"));
@@ -201,7 +201,7 @@ function groupLabel(text, count) {
 /* ── panels ─────────────────────────────────────────────────────────────── */
 
 // .empty is the settled kind of nothing — dashed border, centred, h3 then p then button.
-function emptyPanel(heading, body) {
+export function emptyPanel(heading, body) {
   const p = el("div", "empty");
   p.append(el("h3", null, heading));
   if (body) p.append(el("p", null, body));
@@ -213,7 +213,7 @@ function emptyPanel(heading, body) {
  * exact wording underneath in a <code>. Keep them separate — paraphrasing the raw
  * message into the prose is how a report of a real fault turns into a shrug.
  */
-function errorPanel(prose, raw, onRetry) {
+export function errorPanel(prose, raw, onRetry) {
   const p = el("div", "err");
   p.append(el("strong", null, prose));
   if (raw) p.append(el("code", null, String(raw)));
@@ -229,7 +229,7 @@ function plainHead() {
   return h;
 }
 
-function loading() {
+export function loading() {
   const w = el("div", "t2-wrap");
   w.append(plainHead());
   w.append(el("p", "t2-sub", "Loading…"));
@@ -517,7 +517,7 @@ function noDataPanel(ctx, again, isStale) {
 // stylesheet of its own and must not reach into tokens.css, which another file owns.
 // Everything here is geometry: the card grid, and how it collapses. The colours, the
 // type scale and the spacing steps are all tokens.
-function styles() {
+export function styles() {
   return el(
     "style",
     null,
