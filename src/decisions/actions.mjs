@@ -7,7 +7,7 @@
 // written, the person edits it, and their own mail client sends it.
 import { actionId } from "./ids.mjs";
 import { actionLabel, limit } from "./rules.mjs";
-import { getSettings } from "./db.mjs";
+import { getSettings, nowIso } from "./db.mjs";
 import { logEvent, getDecision, suggestedDue } from "./decisions.mjs";
 import { draftEmail, splitEmail } from "./reason.mjs";
 import { buildPacket } from "./packet.mjs";
@@ -110,7 +110,7 @@ export async function prepareDraftEmail(db, decisionId, { complete, force = fals
     decisionId,
     d.account_id,
     JSON.stringify(payload),
-    new Date().toISOString(),
+    nowIso(db),
   );
   logEvent(db, decisionId, "user", "action_prepared", { kind: "draft_email", source: drafted.source });
   return { ok: true, action: { id, kind: "draft_email", status: "prepared", payload } };
@@ -136,7 +136,7 @@ export function prepareTask(db, decisionId, { title, owner, dueAt, note } = {}) 
     decisionId,
     d.account_id,
     JSON.stringify(payload),
-    new Date().toISOString(),
+    nowIso(db),
   );
 
   const sets = [];
@@ -150,7 +150,7 @@ export function prepareTask(db, decisionId, { title, owner, dueAt, note } = {}) 
     args.push(payload.dueAt);
   }
   if (sets.length) {
-    db.prepare(`UPDATE decision SET ${sets.join(", ")}, updated_at = ? WHERE id = ?`).run(...args, new Date().toISOString(), decisionId);
+    db.prepare(`UPDATE decision SET ${sets.join(", ")}, updated_at = ? WHERE id = ?`).run(...args, nowIso(db), decisionId);
   }
   logEvent(db, decisionId, "user", "action_prepared", { kind: "task", title: clean, owner: payload.owner, dueAt: payload.dueAt });
   return { ok: true, action: { id, kind: "task", status: "prepared", payload } };
@@ -167,7 +167,7 @@ export function updateAction(db, id, { status, payload } = {}) {
   db.prepare("UPDATE action SET status = ?, payload_json = ?, done_at = ? WHERE id = ?").run(
     newStatus,
     JSON.stringify(next),
-    newStatus === "done" ? new Date().toISOString() : null,
+    newStatus === "done" ? nowIso(db) : null,
     id,
   );
   if (newStatus !== row.status) {
@@ -177,7 +177,7 @@ export function updateAction(db, id, { status, payload } = {}) {
     if (newStatus === "done") {
       const d = getDecision(db, row.decision_id);
       if (d && ["new", "accepted"].includes(d.status)) {
-        db.prepare("UPDATE decision SET status = 'in_progress', updated_at = ? WHERE id = ?").run(new Date().toISOString(), d.id);
+        db.prepare("UPDATE decision SET status = 'in_progress', updated_at = ? WHERE id = ?").run(nowIso(db), d.id);
         logEvent(db, d.id, "system", "status", { from: d.status, to: "in_progress", because: "an action was completed" });
       }
     }

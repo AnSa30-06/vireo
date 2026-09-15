@@ -49,18 +49,28 @@ this and delete it later.
 
 ---
 
-## 1b. They may not need the 4 GB download at all
+## 1b. Vireo is self-contained, on purpose
 
-If the person you are sending this to already has **OmniAgent** installed, Vireo
-finds it and shares its model gateway, agent and browser rather than downloading
-nearly 4 GB of identical files. Setup then takes seconds instead of half an hour.
+Vireo downloads its own model gateway, its own agent and its own browser, into its
+own data directory. It never reads another program's install, and nothing it does
+depends on what else is on the machine.
 
-**They must close OmniAgent first.** Both apps start a model gateway on the same
-port, so while OmniAgent is open the components cannot be shared and Vireo
-downloads its own copy. Setup and `vireo doctor` both say which is happening.
+🗑️ **Removed 2026-09-15: sharing components with an OmniAgent install.** Version
+1.2.1 detected an OmniAgent install and reused its gateway, agent and Chromium to
+skip about 4 GB of downloading. It is gone, and it is not coming back.
 
-Turn it off with `borrowRuntime: "never"` in `config.json` if you would rather
-each install were entirely self-contained.
+**Why it was removed.** Both apps start a model gateway on the same port (20129),
+so the two installs fought whenever both were open. That made Vireo's behaviour
+depend on whether an unrelated program happened to be running, which is not a
+property a working install should have. Anmol's call:
+
+> *"That just messes things up when you download both software programs on your
+> laptop. Keep it self-contained. I'm okay with re-downloading the models and
+> whatnot."*
+
+`tests/unit/self-contained.test.mjs` fails if anyone re-introduces it.
+
+**What this costs the person you send it to:** the full download, once. See step 3.
 
 ## 2. Build the installer
 

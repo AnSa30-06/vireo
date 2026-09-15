@@ -14,6 +14,7 @@ import { decisionId, eventId, hypothesisId } from "./ids.mjs";
 import { actionLabel, limit } from "./rules.mjs";
 import { severityRank } from "./situations.mjs";
 import { daysBetween, money, addDays } from "./format.mjs";
+import { nowIso } from "./db.mjs";
 
 /** Legal status moves. Anything not listed is refused with this table shown. */
 export const TRANSITIONS = {
@@ -42,7 +43,7 @@ export function logEvent(db, decId, actor, kind, data = null) {
   db.prepare("INSERT INTO decision_event (id, decision_id, at, actor, kind, data_json) VALUES (?, ?, ?, ?, ?, ?)").run(
     eventId(),
     decId,
-    new Date().toISOString(),
+    nowIso(db),
     actor,
     kind,
     data == null ? null : JSON.stringify(data),
@@ -138,7 +139,7 @@ function writeHypotheses(db, decId, hypotheses = []) {
  * @returns {{action: "created"|"updated"|"unchanged"|"suppressed", decisionId?: string}}
  */
 export function upsertFromSituation(db, { situation, account, brief, model, packetHash, runId, asOf, settings = {} }) {
-  const now = new Date().toISOString();
+  const now = nowIso(db);
   const existing = openWithFingerprint(db, situation.fingerprint);
   const accountName = account?.name ?? "Company-wide";
   const title = titleFor({ kind: situation.kind, accountName, signals: situation.signals, cohort: situation.cohort });
@@ -281,7 +282,7 @@ export function setStatus(db, id, next, { actor = "user", data = null } = {}) {
 
   db.prepare("UPDATE decision SET status = ?, updated_at = ?, snoozed_until = NULL, status_before_snooze = NULL WHERE id = ?").run(
     next,
-    new Date().toISOString(),
+    nowIso(db),
     id,
   );
   logEvent(db, id, actor, "status", { from: d.status, to: next, ...(data ?? {}) });
@@ -291,7 +292,7 @@ export function setStatus(db, id, next, { actor = "user", data = null } = {}) {
 export function setOwner(db, id, owner) {
   const d = getDecision(db, id);
   if (!d) return { ok: false, error: "no such decision" };
-  db.prepare("UPDATE decision SET owner = ?, updated_at = ? WHERE id = ?").run(owner || null, new Date().toISOString(), id);
+  db.prepare("UPDATE decision SET owner = ?, updated_at = ? WHERE id = ?").run(owner || null, nowIso(db), id);
   logEvent(db, id, "user", "owner", { from: d.owner, to: owner || null });
   return { ok: true, decision: getDecision(db, id) };
 }
@@ -299,7 +300,7 @@ export function setOwner(db, id, owner) {
 export function setDue(db, id, dueAt) {
   const d = getDecision(db, id);
   if (!d) return { ok: false, error: "no such decision" };
-  db.prepare("UPDATE decision SET due_at = ?, updated_at = ? WHERE id = ?").run(dueAt || null, new Date().toISOString(), id);
+  db.prepare("UPDATE decision SET due_at = ?, updated_at = ? WHERE id = ?").run(dueAt || null, nowIso(db), id);
   logEvent(db, id, "user", "due", { from: d.due_at, to: dueAt || null });
   return { ok: true, decision: getDecision(db, id) };
 }
@@ -312,7 +313,7 @@ export function snooze(db, id, until) {
   db.prepare("UPDATE decision SET status = 'snoozed', status_before_snooze = ?, snoozed_until = ?, updated_at = ? WHERE id = ?").run(
     d.status,
     until,
-    new Date().toISOString(),
+    nowIso(db),
     id,
   );
   logEvent(db, id, "user", "snoozed", { until, from: d.status });
@@ -327,7 +328,7 @@ export function dismiss(db, id, reason) {
   if (!(TRANSITIONS[d.status] ?? []).includes("dismissed")) return refuse(d.status);
   db.prepare("UPDATE decision SET status = 'dismissed', dismissed_reason = ?, updated_at = ? WHERE id = ?").run(
     text,
-    new Date().toISOString(),
+    nowIso(db),
     id,
   );
   logEvent(db, id, "user", "dismissed", { reason: text });
@@ -350,7 +351,7 @@ export function resolve(db, id, { result, note = null, arrAfter = null }) {
     return { ok: false, error: "pick what happened", allowed: Object.keys(OUTCOMES) };
   }
   if (!(TRANSITIONS[d.status] ?? []).includes("resolved")) return refuse(d.status);
-  const now = new Date().toISOString();
+  const now = nowIso(db);
   // Status and outcome in ONE transaction: a resolved decision with no recorded
   // outcome is the exact hole this product exists to close.
   db.exec("BEGIN");
@@ -373,7 +374,7 @@ export function reopen(db, id) {
   const d = getDecision(db, id);
   if (!d) return { ok: false, error: "no such decision" };
   if (!["resolved", "dismissed"].includes(d.status)) return { ok: false, error: "this decision is already open" };
-  db.prepare("UPDATE decision SET status = 'accepted', resolved_at = NULL, updated_at = ? WHERE id = ?").run(new Date().toISOString(), id);
+  db.prepare("UPDATE decision SET status = 'accepted', resolved_at = NULL, updated_at = ? WHERE id = ?").run(nowIso(db), id);
   logEvent(db, id, "user", "status", { from: d.status, to: "accepted", reopened: true });
   return { ok: true, decision: getDecision(db, id) };
 }
@@ -384,7 +385,7 @@ export function addNote(db, id, text) {
   const note = String(text ?? "").trim();
   if (!note) return { ok: false, error: "write something first" };
   logEvent(db, id, "user", "note", { text: note });
-  db.prepare("UPDATE decision SET updated_at = ? WHERE id = ?").run(new Date().toISOString(), id);
+  db.prepare("UPDATE decision SET updated_at = ? WHERE id = ?").run(nowIso(db), id);
   return { ok: true };
 }
 

@@ -6,7 +6,7 @@
 // a snooze expires, an overdue decision says so, and a decision left waiting
 // gets a nudge. All of it is in-app state, not a notification - nothing here
 // interrupts anyone outside the window.
-import { getSettings } from "./db.mjs";
+import { getSettings, nowIso } from "./db.mjs";
 import { logEvent } from "./decisions.mjs";
 import { limit } from "./rules.mjs";
 import { asOfFor } from "./run.mjs";
@@ -16,24 +16,36 @@ import { logger } from "../util/log.mjs";
 
 const log = logger("decisions/followup");
 
-/** Has this decision had a reminder in the last `hours`? */
+/**
+ * Has this decision had a reminder in the last `hours`?
+ *
+ * ⚠️ Measured against the ENGINE clock, never `Date.now()`. The reminder rows it
+ * reads are written by `logEvent`, which stamps the pinned day in demo mode. A
+ * wall-clock comparison here made every stored reminder look days old the moment
+ * the demo date differed from today, so "one reminder a day" silently became one
+ * reminder per tick.
+ */
 function remindedRecently(db, decisionId, hours = 24) {
   const row = db
     .prepare("SELECT at FROM decision_event WHERE decision_id = ? AND kind = 'reminder' ORDER BY at DESC LIMIT 1")
     .get(decisionId);
   if (!row) return false;
-  const age = Date.now() - Date.parse(row.at);
+  const age = Date.parse(nowIso(db)) - Date.parse(row.at);
   return Number.isFinite(age) && age < hours * 3600 * 1000;
 }
 
 /**
- * One pass over a workspace. Pure of side effects other than the database, and
- * takes `now` so the tests can move time without waiting.
+ * One pass over a workspace. Pure of side effects other than the database.
+ *
+ * Time comes from the engine clock, so demo mode moves it by setting `as_of`.
+ * This used to take a `now` argument described as being "so the tests can move
+ * time without waiting" - no caller or test ever passed one, and time is moved
+ * with `as_of` instead, so it has been removed.
  */
-export function tick(db, now = new Date()) {
+export function tick(db) {
   const settings = getSettings(db);
   const asOf = asOfFor(db);
-  const nowIso = new Date(now).toISOString();
+  const stampedAt = nowIso(db);
   const out = { unsnoozed: 0, overdue: 0, waiting: 0 };
 
   // 1. Snoozes that have expired.
@@ -43,7 +55,7 @@ export function tick(db, now = new Date()) {
     const back = d.status_before_snooze || "new";
     db.prepare("UPDATE decision SET status = ?, snoozed_until = NULL, status_before_snooze = NULL, updated_at = ? WHERE id = ?").run(
       back,
-      nowIso,
+      stampedAt,
       d.id,
     );
     logEvent(db, d.id, "system", "unsnoozed", { reason: "the snooze ran out", back });

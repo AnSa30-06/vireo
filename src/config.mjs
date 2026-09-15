@@ -13,17 +13,6 @@ export const DEFAULTS = {
    * rebuild does not re-add a provider the user has since removed on purpose.
    */
   bundledKeyApplied: false,
-  /**
-   * Reuse an OmniAgent install's model gateway, agent and browser instead of
-   * downloading nearly 4 GB of identical files. "auto" borrows when OmniAgent
-   * is installed and NOT running; "never" always downloads its own copy.
-   * See src/setup/borrow-runtime.mjs.
-   */
-  borrowRuntime: "auto",
-  /** Resolved at startup. The package directory being borrowed, or null. */
-  borrowedFrom: null,
-  /** Resolved at startup. The Chromium directory being borrowed, or null. */
-  borrowedBrowsers: null,
   gateway: {
     /** Port for the bundled, isolated OmniRoute instance. */
     port: 20129,

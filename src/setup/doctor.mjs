@@ -270,33 +270,7 @@ export async function runDoctor(opts = {}) {
       add(row("Browser", FAIL, err.message, "Run: vireo setup --browser"));
     }
   } else {
-    const { browsersDir } = await import("./borrow-runtime.mjs");
-    add(row("Browser", OK, "Chromium present at " + browsersDir()));
-  }
-
-  // --- Shared components ---------------------------------------------------
-  //
-  // Worth its own row: when this is on, the app depends on files inside ANOTHER
-  // program's install. If someone uninstalls OmniAgent, this is the line that
-  // explains why the gateway suddenly needs downloading.
-  try {
-    const { describeBorrow, detectOmniAgent, omniAgentRunning } = await import("./borrow-runtime.mjs");
-    const d = describeBorrow();
-    if (d.borrowing) {
-      add(row("Shared components", OK, d.text + " Source: " + d.from));
-    } else {
-      const found = detectOmniAgent();
-      if (found.found) {
-        const running = await omniAgentRunning(found);
-        add(
-          running.running
-            ? row("Shared components", WARN, "An OmniAgent install is here but OmniAgent is open, so its components are not being shared.", "Close OmniAgent and start Vireo again.")
-            : row("Shared components", OK, "An OmniAgent install was found and can be shared."),
-        );
-      }
-    }
-  } catch (err) {
-    add(row("Shared components", WARN, "could not be checked: " + err.message));
+    add(row("Browser", OK, "Chromium present at " + PATHS.browsers));
   }
 
   // --- Documents -----------------------------------------------------------

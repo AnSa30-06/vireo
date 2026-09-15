@@ -12,7 +12,6 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import * as local from "./browser.mjs";
 import { PATHS, pkg, ensureDirs } from "../util/paths.mjs";
-import { browsersDir } from "../setup/borrow-runtime.mjs";
 import { nodeExe, IS_BUN } from "../util/node-exe.mjs";
 import { logger } from "../util/log.mjs";
 
@@ -81,7 +80,7 @@ async function spawnHost() {
   const child = spawn(exe, [script], {
     env: {
       ...process.env,
-      PLAYWRIGHT_BROWSERS_PATH: browsersDir(),
+      PLAYWRIGHT_BROWSERS_PATH: PATHS.browsers,
       VIREO_HOME: PATHS.home,
     },
     stdio: ["ignore", "pipe", "pipe"],

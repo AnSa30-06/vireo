@@ -341,6 +341,35 @@ export function getSettings(db) {
   return { ...DEFAULT_SETTINGS, ...saved };
 }
 
+/**
+ * The timestamp the engine writes on records: the pinned day in demo mode,
+ * the real clock otherwise.
+ *
+ * 🔴 EVERY `updated_at`, `resolved_at` AND EVENT TIME MUST COME FROM HERE.
+ * Demo mode exists so the clock can be advanced by hand, and the whole point of
+ * advancing it is to watch follow-ups, overdue reminders and waiting nudges
+ * fire. Those all measure `daysBetween(record, asOf)`. When a status change
+ * stamped the WALL clock instead, advancing `as_of` by nine days moved the
+ * question but not the record, the gap stayed near zero, and **nothing ever
+ * fired** - the one behaviour demo mode is for.
+ *
+ * ⚠️ It hid behind a timezone. The test that covers it compares a 7-day
+ * threshold against a fixed 2026-09-09 scenario, so it passed while the real
+ * UTC date was on or before 2026-09-11 and began failing on the 12th. A test
+ * that depends on the day it is run is not evidence either way, which is why
+ * `tests/unit/decisions-clock.test.mjs` now pins the clock instead.
+ *
+ * ⭐ The time of day is kept from the real clock on purpose. Two events on the
+ * same pinned day must still be orderable - several queries use
+ * `ORDER BY updated_at DESC`, and a constant timestamp would make that ordering
+ * arbitrary.
+ */
+export function nowIso(db) {
+  const pinned = getSettings(db).demoMode ? getMeta(db, "as_of") : null;
+  const real = new Date().toISOString();
+  return pinned ? pinned + real.slice(10) : real;
+}
+
 export function setSettings(db, patch) {
   const next = { ...getSettings(db), ...patch };
   setMeta(db, "settings_json", JSON.stringify(next));
