@@ -19,12 +19,12 @@ customers and tells you which ones need your attention this week, why, and what 
 
 # ⬇ Download
 
-### **[VireoSetup-1.2.2.exe](https://github.com/AnSa30-06/vireo/releases/download/v1.2.2/VireoSetup-1.2.2.exe)** — 71 MB
+### **[VireoSetup-1.3.0.exe](https://github.com/AnSa30-06/vireo/releases/download/v1.3.0/VireoSetup-1.3.0.exe)** — 71 MB
 
 One file. No account. No API key.
 Windows 10 or 11, 64-bit. No administrator password needed.
 
-Prefer no installer? **[Vireo-Portable-1.2.2.zip](https://github.com/AnSa30-06/vireo/releases/download/v1.2.2/Vireo-Portable-1.2.2.zip)** — 117 MB. Extract it anywhere, run `setup.bat` once, then `app.bat`.
+Prefer no installer? **[Vireo-Portable-1.3.0.zip](https://github.com/AnSa30-06/vireo/releases/download/v1.3.0/Vireo-Portable-1.3.0.zip)** — 117 MB. Extract it anywhere, run `setup.bat` once, then `app.bat`.
 
 ### 📖 **[Read the manual](MANUAL.md)**
 
@@ -52,16 +52,16 @@ version and its release notes.
 Run this in PowerShell in your Downloads folder before opening it:
 
 ```powershell
-Get-FileHash .\VireoSetup-1.2.2.exe -Algorithm SHA256
+Get-FileHash .\VireoSetup-1.3.0.exe -Algorithm SHA256
 ```
 
 It should print:
 
 ```
-F1AF6DFD6789B82BFBC008D3DDABDD580ABA0D5334C709E8E6EBB67F0893ED08
+701AFE530BBE95449F735DB86C212612424A8E27E21F0BE97C4AC26C78D76D91
 ```
 
-The portable zip is `904F1DEC90715A6B54E6908E7E2F2972E6D9253783840EEAA38106749681D6D9`.
+The portable zip is `E636F86A989D727D2E9265FD15973FC91BB99C3700875B07A62BBAA1853C5D91`.
 
 If either prints anything else, delete the file and download it again.
 

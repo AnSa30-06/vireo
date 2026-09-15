@@ -79,7 +79,27 @@ async function fetchNode() {
   say("  Checksum OK.");
 
   const extracted = path.join(CACHE, NODE_DIR_NAME);
-  if (!fs.existsSync(extracted)) {
+
+  // 🔴 "IS IT USABLE", NOT "IS THE FOLDER THERE". This check was
+  // `fs.existsSync(extracted)`, and it cost a build: an interrupted extraction
+  // left the directory created and EMPTY, so the next run saw it, skipped
+  // extraction, copied nothing, and failed much later with "the staged Node
+  // runtime has no npm" - a message about npm when the real fault was a missing
+  // node.exe two steps earlier.
+  //
+  // It is the same shape as the antivirus damage this build already guards
+  // against elsewhere: a path exists, so a check passes, while the thing the
+  // check is really about is not there. Naming the two files the rest of the
+  // build actually needs is what makes it honest.
+  const usable = () =>
+    fs.existsSync(path.join(extracted, "node.exe")) &&
+    fs.existsSync(path.join(extracted, "node_modules", "npm", "bin", "npm-cli.js"));
+
+  if (!usable()) {
+    if (fs.existsSync(extracted)) {
+      say("  The cached Node runtime is incomplete; extracting it again.");
+      fs.rmSync(extracted, { recursive: true, force: true });
+    }
     say("  Extracting Node runtime ...");
     const r = spawnSync(
       "powershell.exe",
@@ -87,6 +107,11 @@ async function fetchNode() {
       { stdio: "inherit", windowsHide: true }
     );
     if (r.status !== 0) throw new Error("failed to extract the Node runtime");
+    // Checked again rather than trusted: Expand-Archive can exit 0 having been
+    // interrupted part-way, which is how the empty directory appeared.
+    if (!usable()) {
+      throw new Error(`extraction finished but ${NODE_DIR_NAME} still has no node.exe and npm - check for antivirus interference`);
+    }
   }
   return extracted;
 }
