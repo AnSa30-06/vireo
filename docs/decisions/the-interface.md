@@ -45,6 +45,17 @@ waiting, snooze, resolve with an outcome, dismiss with a reason, reopen, add a n
 
 **Segments** — saved customer groups, with the matching count previewed before you save.
 
+**Dashboards** — saved metrics, saved charts and boards. Each metric shows the **definition it
+counted by**, right next to the number and editable in one click. A wrong number is fixed where
+you are looking at it, not in a settings page somewhere else.
+
+**Stories** — a report you can run again. Each run is stored with its date and **never changes
+afterwards**, so last month's story still says what it said last month. A story can run itself
+weekly, and exports as a self-contained HTML file that prints to PDF from the browser.
+
+**Embed** — a question box for another page, with **data scopes**: which questions a key may
+answer and a row filter so each caller sees only their own rows. All of it enforced on the server.
+
 **Data** — getting data in. Drop files on the page or point it at a folder; either way you see what
 was read, what was skipped and why, per file.
 
@@ -78,6 +89,21 @@ shell asks for one instead of letting every page render its own failure.
 **Nothing loads from the internet.** The server sends a content-security-policy that permits only
 same-origin resources, and `tests/unit/v2-ui.test.mjs` fails if any file references an external URL.
 The app works with no network and no model configured.
+
+**A request body must be `application/json`.** This looks like hygiene and is a security control.
+A cross-origin request escapes its browser safety check only while it stays "simple", and a JSON
+content type is not simple — the browser preflights it, this server answers with nothing, and the
+request never happens. Before that check existed, a `text/plain` POST from any website, carrying a
+leaked token, executed the route. `tests/unit/server-csrf.test.mjs` holds the line.
+
+**Widening a data scope asks first.** Deleting a scope already refused while live keys pointed at
+it; editing one did not, and the two are the same leak. A change that grants a scope *more* than it
+has now names the keys it would affect and waits. Narrowing never asks, because a guard that
+blocked every edit would push people to delete and recreate instead.
+
+**A chart says what it did not draw.** Long histories are capped, and the cap keeps the most recent
+buckets and prints how many are missing. A picture that quietly disagrees with the number above it
+is the exact failure this product argues against.
 
 ---
 
