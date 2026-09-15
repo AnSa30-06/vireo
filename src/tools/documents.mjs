@@ -127,22 +127,17 @@ async function readDocx(abs) {
   return { kind: "docx", text: value.trim(), warnings: (messages || []).map((m) => m.message).slice(0, 10) };
 }
 
-async function readXlsx(abs, { maxRows = 5000 } = {}) {
-  const ExcelJS = (await import("exceljs")).default;
-  const wb = new ExcelJS.Workbook();
-  await wb.xlsx.readFile(abs);
-  const sheets = [];
-  wb.eachSheet((ws) => {
-    const rows = [];
-    ws.eachRow({ includeEmpty: false }, (row, n) => {
-      if (n > maxRows) return;
-      const values = Array.isArray(row.values) ? row.values.slice(1) : [];
-      rows.push(values.map((v) => (v && typeof v === "object" && "result" in v ? v.result : v && typeof v === "object" && "text" in v ? v.text : v ?? "")));
-    });
-    const { headers, records } = csvToRecords(rows.map((r) => r.map((c) => (c == null ? "" : String(c)))));
-    sheets.push({ name: ws.name, rowCount: rows.length, headers, records });
-  });
-  return { kind: "xlsx", sheetCount: sheets.length, sheets };
+/**
+ * Spreadsheets are read by src/tools/spreadsheet.mjs, not here.
+ *
+ * What used to be in this function assumed row 0 held the headers, stringified
+ * every cell, ignored merged cells and stopped at 5,000 rows without saying so.
+ * Each sheet now comes back with a `report` naming the header row it chose, the
+ * headers it renamed, and every row it skipped with the reason.
+ */
+async function readXlsx(abs, opts = {}) {
+  const { readWorkbook } = await import("./spreadsheet.mjs");
+  return readWorkbook(abs, opts);
 }
 
 /**
