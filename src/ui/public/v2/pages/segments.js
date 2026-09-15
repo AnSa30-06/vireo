@@ -16,66 +16,62 @@
 //      in the builder as a proposal with a Use / Discard choice, and the reader says
 //      which of your words it did not use. Nothing is applied invisibly.
 //
-// WHAT IS AND IS NOT WIRED, stated here because the screen states it too:
+// 🔴 WHERE THE MATCHING HAPPENS, AND WHY IT IS NOT HERE. Every count, every sample and
+// every saved rule on this page is produced by src/decisions/segments.mjs, through the
+// six decisionsSegment* routes. This file does no matching of its own. An earlier build
+// matched locally, which meant two implementations of the same rule — the one that
+// counted while you typed and the one that would eventually be stored. Two of them can
+// only drift, and a segment whose preview disagrees with its saved count is the exact
+// failure this screen exists to prevent. The count under the builder and the count beside
+// the saved row now come from one function on the server.
 //
-//   * SAVING IS NOT WIRED. Every handler in src/decisions/routes.mjs was read, and not
-//     one of them stores a named rule. See SEGMENTS below — it is the only path a save
-//     takes, it throws, and the throw is rendered verbatim. Segments built here are held
-//     in memory for this window only and every row says so.
-//   * MATCHING AND COUNTING ARE REAL. Every customer, every field and every number on
-//     this page comes from decisionsCustomers and decisionsSettingsGet. The matching runs
-//     locally over those rows. Nothing is sampled, seeded or rounded into existence.
-//   * THE DESCRIPTION BOX IS A LOCAL PHRASE READER, NOT A MODEL. No route accepts free
-//     text, so the model path throws like the rest. The fallback is a fixed set of
-//     patterns running in this file — deterministic, offline, and incapable of naming a
-//     plan or an owner that is not already in your data.
+// WHAT THE SERVER OWNS, so this file cannot contradict it:
+//   * THE FIELD LIST AND THE OPERATORS. Fetched from decisionsSegments, never written
+//     here. A menu offering a rule the server would refuse is a dead end the user finds
+//     by hitting it.
+//   * THE GROUNDED VALUES. Plans, owners and states come from the imported data, so the
+//     builder cannot offer a plan this workspace does not have.
+//   * THE DESCRIPTION READER. decisionsSegmentDescribe uses a model when one is connected
+//     and an offline phrase list when none is, and says which it used. This page prints
+//     that answer rather than deciding it.
 //
 // Every string reaches the DOM through textContent. Customer names pass through this
 // page; innerHTML is never used, the same rule as app.js, decisions.js and the rest of v2.
 
 export const title = "Segments";
 
-/* ══ THE UNWIRED ADAPTER ═══════════════════════════════════════════════════════
+/* ══ THE BACKEND ═══════════════════════════════════════════════════════════
  *
- * 🔴 NOT WIRED, ON PURPOSE. Every method here throws. This object is the single
- * seam where a real backend would land: when segment routes exist, these five
- * bodies become ctx.api(...) calls and nothing else in this file changes.
- *
- * It is a stub rather than a guess because the route list is closed. The nearest
- * thing to a general store is decisionsSettingsSet, and that is an explicit
- * allow-list patch (owners, businessContext, pseudonymise, demoMode,
- * maxReasonedPerRun, seatPriceMonthly, thresholds) — an extra key is dropped
- * without comment, so a segment written there would vanish and the call would
- * still answer ok:true. Silently losing the user's work is worse than refusing.
+ * The single seam between this screen and the server. Every route it names is
+ * real; a failure comes back as {ok:false, error} and is printed in the server's
+ * own words rather than being turned into a friendlier sentence that says less.
  */
-
-/** The one error shape this file throws for anything the backend cannot do yet. */
-function notWired(what, wouldNeed) {
-  const e = new Error(`${what} is not wired yet — no route in this build can do it.`);
-  e.notWired = true;
-  // Plain description, deliberately NOT a camelCase route name: a made-up name
-  // beside the real ones reads like a real one.
-  e.wouldNeed = wouldNeed;
-  return e;
+function backend(ctx) {
+  // 🔴 EVERY ROUTE NAME IS A LITERAL INSIDE ITS OWN ctx.api(...) CALL, never a
+  // variable passed to a helper. tests/unit/v2-ui.test.mjs checks that the
+  // routes this page calls exist by reading this source for quoted route names
+  // in api() calls. A name routed through a helper slips past that check, and
+  // the first sign of a typo would be an empty section on screen, not a failing
+  // test. (That scan reads comments too, so this one quotes no route name.)
+  //
+  // The server only parses a request body for POST, so every write and the
+  // preview go out as POST. A read with no arguments stays a GET.
+  const post = (body) => ({ method: "POST", body });
+  return {
+    list: () => ctx.api("decisionsSegments"),
+    preview: (groups, limit) => ctx.api("decisionsSegmentPreview", post({ groups, limit })),
+    create: (segment) => ctx.api("decisionsSegmentCreate", post({ name: segment.name, groups: segment.groups })),
+    update: (segment) =>
+      ctx.api("decisionsSegmentUpdate", post({ id: segment.id, name: segment.name, groups: segment.groups })),
+    rename: (id, name) => ctx.api("decisionsSegmentUpdate", post({ id, name })),
+    remove: (id) => ctx.api("decisionsSegmentDelete", post({ id })),
+    describe: (text) => ctx.api("decisionsSegmentDescribe", post({ text })),
+  };
 }
 
-const SEGMENTS = {
-  async list() {
-    throw notWired("Reading saved segments", "a route that returns the rules stored in this workspace");
-  },
-  async save(_segment) {
-    throw notWired("Saving a segment", "a route that stores a named rule against the workspace");
-  },
-  async remove(_id) {
-    throw notWired("Deleting a saved segment", "a route that removes a stored rule");
-  },
-  async rename(_id, _name) {
-    throw notWired("Renaming a saved segment", "a route that changes a stored rule's name");
-  },
-  async describe(_text) {
-    throw notWired("Turning a description into criteria with a model", "a route that accepts a sentence");
-  },
-};
+/** A route that answered ok:false, or threw, said one of these. Never invent a third. */
+const reasonFrom = (res, err) =>
+  err ? String(err?.message ?? err) : String(res?.error ?? "the server did not say what went wrong");
 
 /* ══ tiny DOM helpers ══════════════════════════════════════════════════════ */
 
@@ -140,177 +136,76 @@ function dateText(ctx, iso) {
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
-/* ══ THE FIELD VOCABULARY ══════════════════════════════════════════════════
+/**
+ * Wait for typing to stop, then run.
  *
- * Exactly the fields decisionsCustomers returns, and nothing else. This list is
- * the honest ceiling of the builder:
- *
- *   industry, segment, seats_purchased, tenureDays and the contact list DO exist
- *   on a customer — but only on decisionsCustomer, one call per customer. A
- *   preview that had to fetch every account to count a rule would be one request
- *   per row per keystroke, so those fields are left out rather than faked. The
- *   panel under the builder says this on screen.
- *
- * `needsRun` marks the three fields that are empty until an analysis has run:
- * decisionsCustomers returns label:null, watching:0 and staleData:false for
- * everyone when there is no run. A rule on those would match nobody and look
- * like a bug, so the UI warns instead.
+ * ⚠️ THE SEQUENCE NUMBER IS NOT DECORATION. Two previews can be in flight at
+ * once, and the slower one can land last. Without the token the screen would
+ * settle on the count for a rule the user has already edited away — the one
+ * thing a preview must never do.
  */
-const FIELDS = [
-  { id: "name", label: "Name", type: "text", get: (c) => c.name },
-  { id: "id", label: "Customer ID", type: "text", get: (c) => c.id },
-  { id: "arr", label: "ARR", type: "money", get: (c) => c.arr },
-  { id: "plan", label: "Plan", type: "text", choices: true, get: (c) => c.plan },
-  { id: "owner", label: "Owner", type: "text", choices: true, get: (c) => c.owner },
-  { id: "label", label: "State", type: "enum", needsRun: true, get: (c) => c.label },
-  { id: "daysToRenewal", label: "Days to renewal", type: "number", get: (c) => c.daysToRenewal },
-  { id: "renewalDate", label: "Renewal date", type: "date", get: (c) => c.renewalDate },
-  { id: "openDecisions", label: "Open decisions", type: "number", get: (c) => c.openDecisions },
-  { id: "watching", label: "Watch items", type: "number", needsRun: true, get: (c) => c.watching },
-  { id: "staleData", label: "Data is stale", type: "bool", needsRun: true, get: (c) => c.staleData },
-];
+function debounced(ms, fn) {
+  let timer = null;
+  let issued = 0;
+  return (...args) => {
+    clearTimeout(timer);
+    const mine = ++issued;
+    timer = setTimeout(() => fn(() => mine === issued, ...args), ms);
+  };
+}
 
-const fieldById = (id) => FIELDS.find((f) => f.id === id) ?? null;
+/* ══ THE VOCABULARY, AS THE SERVER DESCRIBES IT ════════════════════════════
+ *
+ * `view.fields` and `view.ops` arrive from decisionsSegments. Nothing below
+ * hardcodes a field id or an operator: a field added on the server appears here
+ * with no change to this file, and one removed stops being offered.
+ */
 
-const NUM_OPS = [
-  ["gte", "is at least"],
-  ["gt", "is more than"],
-  ["lte", "is at most"],
-  ["lt", "is less than"],
-  ["eq", "is exactly"],
-  ["blank", "is not known"],
-  ["notblank", "is known"],
-];
+const fieldById = (view, id) => view.fields.find((f) => f.id === id) ?? null;
+const opsFor = (view, field) => view.ops[field?.type] ?? view.ops.text ?? [];
+const opEntry = (view, field, op) => opsFor(view, field).find(([v]) => v === op) ?? null;
+const opLabel = (view, field, op) => opEntry(view, field, op)?.[1] ?? op;
+/** The server says which operators take a value; blank/notblank/true/false do not. */
+const needsValue = (view, field, op) => opEntry(view, field, op)?.[2] === true;
 
-const OPS = {
-  text: [
-    ["is", "is"],
-    ["isnot", "is not"],
-    ["contains", "contains"],
-    ["notcontains", "does not contain"],
-    ["blank", "is blank"],
-    ["notblank", "is not blank"],
-  ],
-  money: NUM_OPS,
-  number: NUM_OPS,
-  enum: [
-    ["is", "is"],
-    ["isnot", "is not"],
-    ["blank", "has none"],
-    ["notblank", "has one"],
-  ],
-  bool: [
-    ["true", "is yes"],
-    ["false", "is no"],
-  ],
-  date: [
-    ["before", "is before"],
-    ["after", "is after"],
-    ["on", "is on"],
-    ["blank", "is blank"],
-    ["notblank", "is not blank"],
-  ],
-};
+/** The values a choices field may take, as [value, label] pairs. */
+function choicesFor(view, field) {
+  const bag = view.choices?.[field?.choices];
+  if (!bag) return [];
+  if (Array.isArray(bag)) return bag.map((v) => [v, v]);
+  return Object.entries(bag).map(([k, label]) => [k, String(label)]);
+}
 
-const opsFor = (field) => OPS[field?.type] ?? OPS.text;
-const opLabel = (field, op) => (opsFor(field).find(([v]) => v === op) ?? [null, op])[1];
-
-/** blank/notblank/true/false carry their own meaning; the rest need a value typed in. */
-const VALUELESS = new Set(["blank", "notblank", "true", "false"]);
-const needsValue = (op) => !VALUELESS.has(op);
-
-/** A rule that still needs a value is not counted and cannot be saved. */
-function isComplete(rule) {
-  if (!rule || !fieldById(rule.field)) return false;
-  if (!needsValue(rule.op)) return true;
+/** A rule the server would count. Incomplete rules are previewed as absent. */
+function isComplete(view, rule) {
+  const f = fieldById(view, rule?.field);
+  if (!f) return false;
+  if (!needsValue(view, f, rule.op)) return true;
   return String(rule.value ?? "").trim() !== "";
 }
 
-/* ══ MATCHING ══════════════════════════════════════════════════════════════
- *
- * The shape is a conjunction of disjunctions: every GROUP must match, and inside
- * a group any ONE rule is enough. That is the whole AND/OR model and it is
- * deliberate — a flat list with a per-row "and"/"or" needs brackets to mean
- * anything, and an unbracketed mixed rule is read differently by every person who
- * opens it. Ambiguity is the failure this screen exists to prevent, so the two
- * levels are fixed and the English sentence brackets them for you.
- */
-
-function testRule(c, rule) {
-  const f = fieldById(rule.field);
-  if (!f) return false;
-  const v = f.get(c);
-  const op = rule.op;
-  const empty = v == null || v === "";
-
-  if (op === "blank") return empty;
-  if (op === "notblank") return !empty;
-  if (op === "true") return v === true;
-  if (op === "false") return v !== true;
-
-  const raw = String(rule.value ?? "").trim();
-  if (raw === "") return false;
-
-  if (f.type === "money" || f.type === "number") {
-    const n = Number(v);
-    const t = Number(raw);
-    if (empty || !Number.isFinite(n) || !Number.isFinite(t)) return false;
-    if (op === "gte") return n >= t;
-    if (op === "gt") return n > t;
-    if (op === "lte") return n <= t;
-    if (op === "lt") return n < t;
-    if (op === "eq") return n === t;
-    return false;
-  }
-
-  if (f.type === "date") {
-    // renewalDate arrives as "YYYY-MM-DD", so a string compare is a date compare.
-    const day = String(v ?? "").slice(0, 10);
-    if (!day) return false;
-    if (op === "before") return day < raw;
-    if (op === "after") return day > raw;
-    if (op === "on") return day === raw;
-    return false;
-  }
-
-  const s = String(v ?? "").toLowerCase();
-  const t = raw.toLowerCase();
-  if (op === "is") return s === t;
-  if (op === "isnot") return s !== t;
-  if (op === "contains") return s.includes(t);
-  if (op === "notcontains") return !s.includes(t);
-  return false;
+function activeGroups(view, seg) {
+  return (seg?.groups ?? []).map((g) => (g?.rules ?? []).filter((r) => isComplete(view, r))).filter((g) => g.length > 0);
 }
 
-/** Groups that still have no complete rule place no constraint at all. */
-function activeGroups(seg) {
-  return (seg?.groups ?? []).map((g) => (g?.rules ?? []).filter(isComplete)).filter((g) => g.length > 0);
-}
-
-function matchRows(rows, seg) {
-  const groups = activeGroups(seg);
-  if (!groups.length) return rows.slice();
-  return rows.filter((c) => groups.every((g) => g.some((r) => testRule(c, r))));
-}
-
-function countIncomplete(seg) {
+function countIncomplete(view, seg) {
   let n = 0;
-  for (const g of seg?.groups ?? []) for (const r of g?.rules ?? []) if (!isComplete(r)) n++;
+  for (const g of seg?.groups ?? []) for (const r of g?.rules ?? []) if (!isComplete(view, r)) n++;
   return n;
 }
 
 /* ══ THE RULE, IN ENGLISH ══════════════════════════════════════════════════ */
 
-function ruleWords(rule, view) {
-  const f = fieldById(rule.field);
+function ruleWords(view, rule) {
+  const f = fieldById(view, rule.field);
   if (!f) return `${rule.field} ?`;
-  const op = opLabel(f, rule.op);
-  if (!needsValue(rule.op)) return `${f.label} ${op}`;
+  const op = opLabel(view, f, rule.op);
+  if (!needsValue(view, f, rule.op)) return `${f.label} ${op}`;
   const raw = String(rule.value ?? "").trim();
   if (raw === "") return `${f.label} ${op} …`;
   if (f.type === "money") return `${f.label} ${op} ${money(view.ctx, Number(raw), view.currency)}`;
   if (f.type === "date") return `${f.label} ${op} ${dateText(view.ctx, raw)}`;
-  if (f.id === "label") return `${f.label} ${op} ${view.labels[raw] ?? raw}`;
+  if (f.choices === "labels") return `${f.label} ${op} ${view.choices?.labels?.[raw] ?? raw}`;
   return `${f.label} ${op} ${raw}`;
 }
 
@@ -319,9 +214,9 @@ function ruleWords(rule, view) {
  * an owner name is customer data and goes in through textContent like everything
  * else.
  */
-function ruleSentence(seg, view) {
+function ruleSentence(view, seg) {
   const line = el("div", "sg-sentence");
-  const groups = (seg?.groups ?? []).map((g) => (g?.rules ?? []).filter(isComplete)).filter((g) => g.length);
+  const groups = activeGroups(view, seg);
 
   if (!groups.length) {
     line.append(el("span", "sg-muted", "No rules yet — this matches every customer."));
@@ -334,176 +229,12 @@ function ruleSentence(seg, view) {
     if (rules.length > 1) wrap.append(el("span", "sg-paren", "("));
     rules.forEach((r, ri) => {
       if (ri > 0) wrap.append(el("span", "sg-join or", "or"));
-      wrap.append(el("span", "sg-rule", ruleWords(r, view)));
+      wrap.append(el("span", "sg-rule", ruleWords(view, r)));
     });
     if (rules.length > 1) wrap.append(el("span", "sg-paren", ")"));
     line.append(wrap);
   });
   return line;
-}
-
-/* ══ THE DESCRIPTION READER ════════════════════════════════════════════════
- *
- * 🔶 THIS IS NOT A MODEL. It is a fixed list of patterns, run in this file, with
- * no network call. It exists because SEGMENTS.describe throws and a box that can
- * only ever show an error is not a feature.
- *
- * Two properties make it safe to put in front of a user:
- *
- *   * IT CANNOT INVENT A VALUE. Plan and owner rules are only produced when the
- *     word already appears in the fetched customer rows, so it can never write
- *     `Plan is Platinum` into a workspace that has no Platinum plan. A phrase it
- *     cannot ground is left in the "words I did not use" list instead.
- *   * IT REPORTS WHAT IT IGNORED. Every word that produced no rule is shown back.
- *     The user can then see the gap rather than trusting a rule that quietly
- *     dropped half the sentence.
- *
- * Output is a PROPOSAL. It is never written into the builder without a click.
- */
-
-const STOPWORDS = new Set([
-  "a","an","the","and","or","of","in","on","at","to","for","with","that","this","these","those",
-  "is","are","was","were","be","been","am","do","does","did","has","have","had","who","whose",
-  "show","me","list","find","get","all","any","some","my","our","their","them","they","it",
-  "customer","customers","account","accounts","client","clients","company","companies",
-  "please","just","only","also","where","which","what","when","than","then","not","no",
-  "one","two","three","most","more","less","other","others","still","yet","very",
-]);
-
-/** "$50k" -> 50000, "1.5m" -> 1500000, "50,000" -> 50000. */
-function parseAmount(digits, suffix) {
-  const n = Number(String(digits).replace(/,/g, ""));
-  if (!Number.isFinite(n)) return null;
-  const s = String(suffix ?? "").toLowerCase();
-  if (s === "k") return n * 1000;
-  if (s === "m") return n * 1000000;
-  return n;
-}
-
-/** Day counts for "in N weeks/months". Months are read as 30 days and the chip says so. */
-function toDays(n, unit) {
-  const k = Number(n);
-  if (!Number.isFinite(k)) return null;
-  const u = String(unit ?? "day").toLowerCase();
-  if (u.startsWith("week")) return k * 7;
-  if (u.startsWith("month")) return k * 30;
-  return k;
-}
-
-/**
- * @returns {{rules: Array, phrases: string[], ignored: string[], notes: string[]}}
- */
-function readDescription(text, view) {
-  const rules = [];
-  const phrases = [];
-  const notes = [];
-  // Matched text is blanked out of `rest`; whatever survives is what was ignored.
-  let rest = ` ${String(text ?? "").toLowerCase()} `;
-
-  const eat = (re, make) => {
-    rest = rest.replace(re, (...args) => {
-      const groups = args.slice(0, -2); // drop offset and the whole string
-      const rule = make(...groups);
-      if (!rule) return groups[0]; // grounded nothing: leave the words visible
-      rules.push(rule);
-      phrases.push(groups[0].trim());
-      return " ";
-    });
-  };
-
-  // 1. Renewal windows. "soon" is not a number this file invents — it is the
-  //    workspace's own renewal_near threshold, read from decisionsSettingsGet.
-  eat(/\brenew\w*\s+(?:is\s+)?(?:with)?in\s+(?:the\s+)?(?:next\s+)?(\d+)\s*(day|week|month)s?\b/g, (_m, n, unit) => {
-    const d = toDays(n, unit);
-    if (d == null) return null;
-    if (unit.startsWith("month")) notes.push("A month was read as 30 days.");
-    return { field: "daysToRenewal", op: "lte", value: String(d) };
-  });
-  eat(/\b(?:renew\w*|renewal)\s+(?:in\s+)?(?:the\s+)?next\s+(\d+)\s*(day|week|month)s?\b/g, (_m, n, unit) => {
-    const d = toDays(n, unit);
-    return d == null ? null : { field: "daysToRenewal", op: "lte", value: String(d) };
-  });
-  eat(/\brenew\w*\s+soon\b|\bsoon\s+to\s+renew\w*\b|\bupcoming\s+renewals?\b/g, () => {
-    const near = view.renewalNearDays;
-    if (near == null) {
-      notes.push('"soon" was ignored: the renewal threshold could not be read from settings.');
-      return null;
-    }
-    notes.push(`"soon" was read as ${plural(near, "day", "days")} — your renewal_near threshold.`);
-    return { field: "daysToRenewal", op: "lte", value: String(near) };
-  });
-
-  // 2. Money. Every comparison word maps to one operator; nothing is guessed.
-  eat(/\b(?:arr|revenue|value|worth|paying|spend)?\s*(?:over|above|more than|greater than|bigger than|>)\s*\$?\s*([\d][\d,.]*)\s*([km])?\b/g,
-    (_m, d, s) => {
-      const v = parseAmount(d, s);
-      return v == null ? null : { field: "arr", op: "gt", value: String(v) };
-    });
-  eat(/\b(?:arr|revenue|value|worth|paying|spend)?\s*(?:at least|minimum of|>=)\s*\$?\s*([\d][\d,.]*)\s*([km])?\b/g,
-    (_m, d, s) => {
-      const v = parseAmount(d, s);
-      return v == null ? null : { field: "arr", op: "gte", value: String(v) };
-    });
-  eat(/\b(?:arr|revenue|value|worth|paying|spend)?\s*(?:under|below|less than|smaller than|<)\s*\$?\s*([\d][\d,.]*)\s*([km])?\b/g,
-    (_m, d, s) => {
-      const v = parseAmount(d, s);
-      return v == null ? null : { field: "arr", op: "lt", value: String(v) };
-    });
-  eat(/\b(?:arr|revenue|value|worth|paying|spend)?\s*(?:at most|no more than|<=)\s*\$?\s*([\d][\d,.]*)\s*([km])?\b/g,
-    (_m, d, s) => {
-      const v = parseAmount(d, s);
-      return v == null ? null : { field: "arr", op: "lte", value: String(v) };
-    });
-
-  // 3. States. The keys come from the API's own `labels` map, so a state this
-  //    product does not compute can never be produced here.
-  const LABEL_PATTERNS = [
-    ["payment_issue", /\bpayment\s+(?:issue|problem|failure|fail)s?\b|\bfailed\s+payments?\b|\bbilling\s+(?:issue|problem)s?\b/g],
-    ["at_risk", /\bat[-\s]risk\b|\bchurn\s+risk\b|\brisk\s+of\s+churn\b|\blikely\s+to\s+churn\b/g],
-    ["expansion_ready", /\bexpansion(?:\s+ready)?\b|\bupsell\b|\bupgrade\s+ready\b|\bready\s+to\s+expand\b/g],
-    ["dormant", /\bdormant\b|\binactive\b|\bgone\s+quiet\b/g],
-    ["watching", /\bwatch(?:ing|list)\b|\bbeing\s+watched\b/g],
-    ["healthy", /\bhealthy\b|\bdoing\s+well\b|\bin\s+good\s+shape\b/g],
-    ["new", /\bnew\s+(?:customer|account|client|logo)s?\b|\bnewly\s+signed\b/g],
-  ];
-  for (const [key, re] of LABEL_PATTERNS) {
-    eat(re, () => (view.labels[key] ? { field: "label", op: "is", value: key } : null));
-  }
-
-  // 4. Owner. Only produced when the name is already an owner in the data.
-  eat(/\bown(?:ed|er)\s*(?:by|is|:)?\s+([a-z][a-z.'-]*(?:\s+[a-z][a-z.'-]*)?)/g, (_m, who) => {
-    const hit = view.owners.find((o) => {
-      const lo = o.toLowerCase();
-      return lo === who.trim() || lo.startsWith(who.trim()) || who.trim().startsWith(lo);
-    });
-    if (!hit) {
-      notes.push(`No owner in your data matches "${who.trim()}", so no owner rule was added.`);
-      return null;
-    }
-    return { field: "owner", op: "is", value: hit };
-  });
-
-  // 5. Plan. Same grounding rule: the plan must exist in the fetched rows.
-  for (const p of view.plans) {
-    const safe = p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    eat(new RegExp(`\\b${safe}\\b(?:\\s+plan)?`, "gi"), () => ({ field: "plan", op: "is", value: p }));
-  }
-
-  // 6. Open decisions and stale data.
-  eat(/\bno\s+open\s+(?:decision|issue|item)s?\b|\bnothing\s+open\b/g, () => ({ field: "openDecisions", op: "eq", value: "0" }));
-  eat(/\b(?:with|has|have|having)?\s*open\s+(?:decision|issue|item)s?\b/g, () => ({ field: "openDecisions", op: "gte", value: "1" }));
-  eat(/\bstale(?:\s+data)?\b|\bout[-\s]of[-\s]date\s+data\b/g, () => ({ field: "staleData", op: "true", value: "" }));
-
-  const ignored = [];
-  for (const w of rest.split(/[^a-z0-9$%'-]+/)) {
-    const word = w.trim();
-    if (word.length < 3) continue;
-    if (STOPWORDS.has(word)) continue;
-    if (/^[\d,.$%]+$/.test(word)) continue;
-    if (!ignored.includes(word)) ignored.push(word);
-  }
-
-  return { rules, phrases, ignored, notes };
 }
 
 /* ══ STYLES ════════════════════════════════════════════════════════════════
@@ -528,7 +259,7 @@ const CSS = `
 .sg-body { padding: var(--s4); display: flex; flex-direction: column; gap: var(--s3); }
 .sg-body.flush { padding: 0; }
 
-/* The "not wired" strip. Amber, not red: nothing is broken, a thing is absent. */
+/* Amber, not red: nothing is broken, a thing is absent or not yet done. */
 .sg-warn { display: flex; gap: var(--s3); align-items: flex-start;
   border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--border));
   background: color-mix(in srgb, var(--warn) 9%, transparent);
@@ -553,6 +284,8 @@ const CSS = `
 .sg-big { font-size: var(--fs-xl); font-weight: 600; letter-spacing: -0.01em; }
 .sg-stat { color: var(--muted); font-size: var(--fs-sm); }
 .sg-stat b { color: var(--text); font-weight: 600; }
+/* While a preview is in flight the old number is dimmed, never left looking current. */
+.sg-count.pending { opacity: .45; }
 
 /* Builder rows. A group is a bordered block; its rules stack inside it. */
 .sg-group { border: 1px solid var(--border-soft); border-radius: var(--radius);
@@ -593,8 +326,8 @@ const CSS = `
 .sg-seg:first-child { border-top: 0; }
 .sg-segtop { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
 .sg-segtop h4 { font-size: var(--fs-md); }
-.sg-tag { font-size: var(--fs-xs); border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--border));
-  color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, transparent);
+.sg-tag { font-size: var(--fs-xs); border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--border));
+  color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent);
   border-radius: var(--radius-pill); padding: 1px 9px; white-space: nowrap; }
 .sg-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 
@@ -616,27 +349,19 @@ function ensureStyles() {
   document.head.append(s);
 }
 
-/* ══ SESSION STORE ═════════════════════════════════════════════════════════
+/* ══ DRAFT ═════════════════════════════════════════════════════════════════
  *
- * Segments live on ctx.state so a trip to Customers and back does not throw the
- * work away. They are NOT saved: the badge on every row says so, and nothing
- * here claims otherwise. When SEGMENTS.save stops throwing, this list becomes
- * the optimistic copy of what the server holds.
+ * The saved segments live in the workspace database now, so nothing about them
+ * is held here. The half-built draft still is: a trip to Customers and back
+ * should not throw away a rule that was never saved.
  */
-function store(ctx) {
-  if (!Array.isArray(ctx.state.segments)) ctx.state.segments = [];
-  return ctx.state.segments;
-}
-
-let seq = 0;
-const newId = () => `sg_${Date.now().toString(36)}_${++seq}`;
 
 const blankSegment = () => ({ id: null, name: "", groups: [{ rules: [] }] });
 
 /** Structured clone without the risk of a shared reference between list and draft. */
 const cloneSeg = (s) => ({
-  id: s.id,
-  name: s.name,
+  id: s.id ?? null,
+  name: s.name ?? "",
   createdAt: s.createdAt,
   groups: (s.groups ?? []).map((g) => ({ rules: (g.rules ?? []).map((r) => ({ ...r })) })),
 });
@@ -650,143 +375,102 @@ export async function render(root, ctx) {
   const page = el("div", "sg");
   root.append(page);
 
-  // ── loading ───────────────────────────────────────────────────────────────
   const loading = el("div", null);
   for (let i = 0; i < 3; i++) loading.append(el("div", "skeleton block"));
   page.append(loading);
 
-  // decisionsCustomers is the whole data source for matching, so its failure ends
-  // the page. decisionsSettingsGet is fetched afterwards and is allowed to fail:
-  // it supplies only the workspace currency, so a sum is not printed with the
-  // wrong symbol, and the renewal_near threshold, so "renewing soon" means the
-  // number this workspace already uses rather than one invented here.
-  let cust;
+  // One call: the saved segments with their live counts, the field vocabulary
+  // the builder offers, and the values a rule may name. Its failure ends the
+  // page, because without the vocabulary there is no builder to show.
+  const api = backend(ctx);
+  let data;
   try {
-    cust = await ctx.api("decisionsCustomers", { query: { label: "all", sort: "arr" } });
+    data = await api.list();
   } catch (err) {
     loading.remove();
-    page.append(errorBox("The customer list could not be read", err?.message ?? String(err)));
+    page.append(errorBox("Segments could not be read", reasonFrom(null, err)));
     return;
   }
-
   loading.remove();
 
-  if (!cust?.ok) {
+  if (!data?.ok) {
     // needsWorkspace is normally caught by the shell, but a direct #/segments hit
     // can still land here before status has been read.
     page.append(
-      errorBox(
-        cust?.needsWorkspace ? "No workspace is open" : "The customer list could not be read",
-        cust?.error ?? "the server did not say what went wrong",
-      ),
+      errorBox(data?.needsWorkspace ? "No workspace is open" : "Segments could not be read", reasonFrom(data)),
     );
     return;
-  }
-
-  const rows = Array.isArray(cust.customers) ? cust.customers : [];
-  const labels = cust.labels && typeof cust.labels === "object" ? cust.labels : {};
-
-  let currency = "USD";
-  let renewalNearDays = null;
-  try {
-    const st = await ctx.api("decisionsSettingsGet");
-    if (st?.ok) {
-      if (st.settings?.currency) currency = String(st.settings.currency);
-      const near = (st.thresholds ?? []).find((t) => t.id === "renewal_near");
-      if (near && Number.isFinite(Number(near.current))) renewalNearDays = Number(near.current);
-    }
-  } catch {
-    // A missing currency symbol is not worth failing the page over; USD is the
-    // backend's own default and every per-customer amount still uses arrLabel,
-    // which the server formatted with the real one.
   }
 
   // Everything the sub-renderers need, in one bag, so no function reaches for a
   // closure two levels up.
   const view = {
     ctx,
-    rows,
-    labels,
-    currency,
-    renewalNearDays,
-    hasRun: cust.hasRun === true,
-    owners: distinct(rows.map((c) => c.owner)),
-    plans: distinct(rows.map((c) => c.plan)),
+    api,
+    fields: Array.isArray(data.fields) ? data.fields : [],
+    ops: data.ops && typeof data.ops === "object" ? data.ops : {},
+    choices: data.choices && typeof data.choices === "object" ? data.choices : {},
+    currency: data.currency ?? "USD",
+    total: Number(data.total) || 0,
+    hasRun: data.hasRun === true,
+    asOf: data.asOf ?? null,
+    segments: Array.isArray(data.segments) ? data.segments : [],
   };
 
-  if (!rows.length) {
-    page.append(unwiredBanner());
+  if (!view.fields.length) {
+    page.append(errorBox("Segments could not be read", "the server returned no fields to build a rule from"));
+    return;
+  }
+
+  if (!view.total) {
     const box = el("div", "empty");
     box.append(el("h3", null, "No customers to group yet"));
     box.append(el("p", null, "A segment is a rule over your customer list, and this workspace has not imported one. Load a folder of CSVs or seed the demo data first."));
     box.append(button("Go to Data", "btn", () => ctx.go("data")));
-    page.append(box);
+    page.append(header(view), box);
     return;
   }
 
   page.append(header(view));
-  page.append(unwiredBanner());
   if (!view.hasRun) page.append(noRunBanner());
 
   const savedMount = el("div");
   const builderMount = el("div");
   page.append(savedMount, builderMount);
 
-  // The draft survives navigation for the same reason the list does.
   if (!ctx.state.segmentDraft) ctx.state.segmentDraft = blankSegment();
 
-  const repaintAll = () => {
-    paintSaved(savedMount, view, repaintAll, (seg) => {
-      ctx.state.segmentDraft = cloneSeg(seg);
-      paintBuilder(builderMount, view, repaintAll);
-      builderMount.scrollIntoView({ block: "start", behavior: "smooth" });
-    });
+  /** Re-read the saved list from the server. The server is the only copy. */
+  const reloadSaved = async () => {
+    try {
+      const fresh = await api.list();
+      if (fresh?.ok) view.segments = Array.isArray(fresh.segments) ? fresh.segments : [];
+      else view.notice = reasonFrom(fresh);
+    } catch (err) {
+      view.notice = reasonFrom(null, err);
+    }
+    paintSaved(savedMount, view, reloadSaved, editDraft);
   };
 
-  repaintAll();
-  paintBuilder(builderMount, view, repaintAll);
-}
-
-function distinct(values) {
-  const out = [];
-  for (const v of values) {
-    const s = v == null ? "" : String(v).trim();
-    if (s && !out.includes(s)) out.push(s);
+  function editDraft(seg) {
+    ctx.state.segmentDraft = cloneSeg(seg);
+    paintBuilder(builderMount, view, reloadSaved);
+    builderMount.scrollIntoView({ block: "start", behavior: "smooth" });
   }
-  return out.sort((a, b) => a.localeCompare(b));
+
+  paintSaved(savedMount, view, reloadSaved, editDraft);
+  paintBuilder(builderMount, view, reloadSaved);
 }
 
-/* ── header ─────────────────────────────────────────────────────────────── */
+/* ── header and banners ─────────────────────────────────────────────────── */
 
 function header(view) {
   const h = el("div", "sg-head");
   h.append(el("h2", null, "Segments"));
-  const asOf = view.ctx.state?.status?.asOf;
-  const bits = [plural(view.rows.length, "customer", "customers")];
-  if (asOf) bits.push(`as of ${dateText(view.ctx, asOf)}`);
+  const bits = [plural(view.total, "customer", "customers")];
+  if (view.asOf) bits.push(`as of ${dateText(view.ctx, view.asOf)}`);
   h.append(el("span", "sg-muted", bits.join(" · ")));
   return h;
-}
-
-/* ── the honest banners ─────────────────────────────────────────────────── */
-
-function unwiredBanner() {
-  const box = el("div", "sg-warn");
-  const body = el("div");
-  const p1 = el("p");
-  p1.append(el("b", null, "Segments cannot be saved in this build. "));
-  p1.append(
-    document.createTextNode(
-      "Everything below is live and real — the rules run against your imported customers and the counts are true. But nothing here survives closing this window.",
-    ),
-  );
-  const p2 = el("p", "sg-muted");
-  p2.append(document.createTextNode("Wiring it needs one thing the backend does not have yet: "));
-  p2.append(el("code", null, "a route that stores a named rule against the workspace"));
-  p2.append(document.createTextNode(". Until then every segment on this page is marked “Not saved”."));
-  body.append(p1, p2);
-  box.append(body);
-  return box;
 }
 
 function noRunBanner() {
@@ -814,94 +498,107 @@ function errorBox(heading, detail) {
 
 /* ── saved segments ─────────────────────────────────────────────────────── */
 
-function paintSaved(mount, view, repaint, onEdit) {
+function paintSaved(mount, view, reload, onEdit) {
   mount.replaceChildren();
-  const list = store(view.ctx);
 
-  // A message left by the last action that could not reach the backend. Shown
-  // once, then cleared, so it never outlives the thing it describes.
-  if (view.ctx.state.segmentNotice) {
+  // A message left by the last action that the server refused. Shown once, then
+  // cleared, so it never outlives the thing it describes.
+  if (view.notice) {
     const note = el("div", "sg-warn");
-    note.append(el("div", null, view.ctx.state.segmentNotice));
+    note.append(el("div", null, view.notice));
     mount.append(note);
-    view.ctx.state.segmentNotice = "";
+    view.notice = "";
   }
 
   const card = el("div", "sg-card");
   const head = el("header");
   head.append(el("h3", null, "Your segments"));
   head.append(el("span", "sg-grow"));
-  head.append(el("span", "sg-muted", list.length ? plural(list.length, "segment", "segments") : "none yet"));
+  head.append(el("span", "sg-muted", view.segments.length ? plural(view.segments.length, "segment", "segments") : "none yet"));
   card.append(head);
 
-  if (!list.length) {
+  if (!view.segments.length) {
     const body = el("div", "sg-body");
-    const p = el("p", "sg-muted");
-    p.textContent = "Build a rule below and it will appear here with its live count. Reading saved segments back from the workspace is not wired, so this list starts empty every time the window opens.";
-    body.append(p);
+    body.append(el("p", "sg-muted", "Build a rule below and save it. Saved segments are kept in this workspace and their counts are recomputed from your data every time this page opens."));
     card.append(body);
     mount.append(card);
     return;
   }
 
   const body = el("div", "sg-body flush");
-  for (const seg of list) body.append(segmentRow(seg, view, repaint, onEdit));
+  for (const seg of view.segments) body.append(segmentRow(seg, view, reload, onEdit));
   card.append(body);
   mount.append(card);
 }
 
-function segmentRow(seg, view, repaint, onEdit) {
+function segmentRow(seg, view, reload, onEdit) {
   const wrap = el("div", "sg-seg");
 
   const top = el("div", "sg-segtop");
   top.append(el("h4", null, seg.name || "Untitled segment"));
-  // The badge is not decoration. It is the one thing standing between the user
-  // and believing this list is persistent.
-  top.append(el("span", "sg-tag", "Not saved"));
+  // A stored rule the server can no longer run. It is named rather than hidden:
+  // a segment silently reporting nothing is worse than one reporting a fault.
+  if (seg.error) top.append(el("span", "sg-tag", "Cannot be run"));
   top.append(el("span", "sg-grow"));
-
-  const matched = matchRows(view.rows, seg);
-  const arr = matched.reduce((t, c) => t + (Number.isFinite(Number(c.arr)) ? Number(c.arr) : 0), 0);
 
   const actions = el("div", "sg-actions");
   const listMount = el("div");
   let open = false;
-  const toggle = button(`${matched.length} matching`, "btn tiny", () => {
+  const shut = seg.count == null ? "No count" : `${seg.count} matching`;
+  const toggle = button(shut, "btn tiny", async () => {
     open = !open;
-    toggle.textContent = open ? "Hide list" : `${matched.length} matching`;
+    toggle.textContent = open ? "Hide list" : shut;
     listMount.replaceChildren();
-    if (open) listMount.append(matchedList(matched, view, 60));
+    if (!open) return;
+    // Fetched only when asked for: a page of saved segments must not pull a
+    // customer list for each of them before anybody has looked.
+    listMount.append(el("div", "sg-item sg-muted", "Reading…"));
+    let res;
+    try {
+      res = await view.api.preview(seg.groups, 60);
+    } catch (err) {
+      res = null;
+      listMount.replaceChildren(errorBox("That segment could not be counted", reasonFrom(null, err)));
+      return;
+    }
+    listMount.replaceChildren();
+    if (!res?.ok) listMount.append(errorBox("That segment could not be counted", reasonFrom(res)));
+    else listMount.append(matchedList(res, view));
   });
   actions.append(toggle);
   actions.append(button("Edit", "btn tiny", () => onEdit(seg)));
   actions.append(
     button("Delete", "btn tiny danger", async () => {
+      let res;
       try {
-        await SEGMENTS.remove(seg.id);
-      } catch (e) {
-        // The throw is carried through the repaint rather than written to a node
-        // that is about to be replaced. Honest, but not obstructive: the server
-        // cannot forget this segment because the server never knew it.
-        view.ctx.state.segmentNotice = `${e?.message ?? e} “${seg.name || "Untitled segment"}” was removed from this window only.`;
+        res = await view.api.remove(seg.id);
+      } catch (err) {
+        res = null;
+        view.notice = `“${seg.name || "Untitled segment"}” was not deleted: ${reasonFrom(null, err)}`;
       }
-      const list = store(view.ctx);
-      const i = list.findIndex((s) => s.id === seg.id);
-      if (i >= 0) list.splice(i, 1);
-      repaint();
+      if (res && !res.ok) view.notice = `“${seg.name || "Untitled segment"}” was not deleted: ${reasonFrom(res)}`;
+      // Reloaded either way, so the list on screen is what the workspace holds
+      // rather than what this page assumed would happen.
+      await reload();
     }),
   );
   top.append(actions);
 
   wrap.append(top);
-  wrap.append(ruleSentence(seg, view));
+  wrap.append(ruleSentence(view, seg));
+
+  if (seg.error) {
+    wrap.append(el("div", "sg-inline-err", seg.error));
+    return wrap;
+  }
 
   const stats = el("div", "sg-count");
   const n = el("span", "sg-stat");
-  n.append(el("b", null, String(matched.length)));
-  n.append(document.createTextNode(` of ${view.rows.length} customers`));
+  n.append(el("b", null, String(seg.count ?? 0)));
+  n.append(document.createTextNode(` of ${view.total} customers`));
   stats.append(n);
   const a = el("span", "sg-stat");
-  a.append(el("b", null, money(view.ctx, arr, view.currency)));
+  a.append(el("b", null, seg.arrLabel ?? money(view.ctx, seg.arr, view.currency)));
   a.append(document.createTextNode(" ARR in this group"));
   stats.append(a);
   wrap.append(stats, listMount);
@@ -909,11 +606,16 @@ function segmentRow(seg, view, repaint, onEdit) {
   return wrap;
 }
 
-/** The matching customers, by name. A count nobody can open is a count nobody checks. */
-function matchedList(matched, view, cap) {
+/**
+ * The matching customers, by name. A count nobody can open is a count nobody
+ * checks. `res` is a preview reply: its sample is a slice of the very set it
+ * counted, so the names and the number here cannot disagree.
+ */
+function matchedList(res, view) {
   const box = el("div", "sg-card");
   const list = el("div", "sg-list");
-  for (const c of matched.slice(0, cap)) {
+  const sample = Array.isArray(res.sample) ? res.sample : [];
+  for (const c of sample) {
     const row = el("button", "sg-item");
     row.type = "button";
     const left = el("div");
@@ -929,16 +631,14 @@ function matchedList(matched, view, cap) {
     list.append(row);
   }
   box.append(list);
-  if (matched.length > cap) {
-    box.append(el("div", "sg-item sg-muted", `Showing the first ${cap} of ${matched.length}.`));
-  }
-  if (!matched.length) box.append(el("div", "sg-item sg-muted", "No customer matches this rule."));
+  if (res.truncated) box.append(el("div", "sg-item sg-muted", `Showing the first ${sample.length} of ${res.count}.`));
+  if (!sample.length) box.append(el("div", "sg-item sg-muted", "No customer matches this rule."));
   return box;
 }
 
 /* ── the builder ────────────────────────────────────────────────────────── */
 
-function paintBuilder(mount, view, repaintSaved) {
+function paintBuilder(mount, view, reloadSaved) {
   const ctx = view.ctx;
   const draft = ctx.state.segmentDraft;
 
@@ -951,7 +651,7 @@ function paintBuilder(mount, view, repaintSaved) {
   head.append(
     button("Clear", "btn tiny ghost", () => {
       ctx.state.segmentDraft = blankSegment();
-      paintBuilder(mount, view, repaintSaved);
+      paintBuilder(mount, view, reloadSaved);
     }),
   );
   card.append(head);
@@ -987,49 +687,47 @@ function paintBuilder(mount, view, repaintSaved) {
   const saveRow = el("div", "sg-row");
   const saveErr = el("div", "sg-inline-err");
   saveErr.hidden = true;
+  const fail = (text) => {
+    saveErr.textContent = text;
+    saveErr.hidden = false;
+  };
   const saveBtn = button(draft.id ? "Update segment" : "Save segment", "btn-primary", async () => {
+    saveErr.hidden = true;
     const name = String(draft.name ?? "").trim();
+    // Checked here so the common mistakes answer instantly, and checked again on
+    // the server, which is the only check that decides what gets stored.
     if (!name) {
-      saveErr.textContent = "Give the segment a name first.";
-      saveErr.hidden = false;
+      fail("Give the segment a name first.");
       nameIn.focus();
       return;
     }
-    if (!activeGroups(draft).length) {
-      saveErr.textContent = "Add at least one complete rule — a segment with no rule is the whole customer list.";
-      saveErr.hidden = false;
+    if (!activeGroups(view, draft).length) {
+      fail("Add at least one complete rule — a segment with no rule is the whole customer list.");
       return;
     }
 
     const seg = cloneSeg(draft);
     seg.name = name;
-    let message = "";
+    saveBtn.disabled = true;
+    let res;
     try {
-      await SEGMENTS.save(seg);
-    } catch (e) {
-      // The throw is shown word for word. The segment is still kept, because a
-      // rule you can see and use beats a rule that was refused, and the row it
-      // creates is badged "Not saved".
-      message = `${e?.message ?? e} Kept on this screen until you close the window.`;
+      res = seg.id ? await view.api.update(seg) : await view.api.create(seg);
+    } catch (err) {
+      saveBtn.disabled = false;
+      fail(reasonFrom(null, err));
+      return;
     }
-
-    const list = store(ctx);
-    if (seg.id) {
-      const i = list.findIndex((s) => s.id === seg.id);
-      if (i >= 0) list[i] = seg;
-      else list.push(seg);
-    } else {
-      seg.id = newId();
-      seg.createdAt = new Date().toISOString();
-      list.push(seg);
+    saveBtn.disabled = false;
+    if (!res?.ok) {
+      // The server's refusal is shown word for word and the draft is kept, so
+      // the work is still on screen to fix rather than thrown away.
+      fail(reasonFrom(res));
+      return;
     }
 
     ctx.state.segmentDraft = blankSegment();
-    // The notice is set before the repaint so it lands in the saved list, beside
-    // the row it is about, rather than above a builder that has already reset.
-    if (message) ctx.state.segmentNotice = message;
-    repaintSaved();
-    paintBuilder(mount, view, repaintSaved);
+    await reloadSaved();
+    paintBuilder(mount, view, reloadSaved);
   });
   saveRow.append(saveBtn, el("span", "sg-grow"));
   body.append(saveRow, saveErr);
@@ -1057,7 +755,7 @@ function paintBuilder(mount, view, repaintSaved) {
     const add = el("div", "sg-row");
     add.append(
       button("+ AND another condition", "btn tiny", () => {
-        draft.groups.push({ rules: [{ field: "arr", op: "gte", value: "" }] });
+        draft.groups.push({ rules: [newRule(view)] });
         rebuildRules();
       }),
     );
@@ -1071,7 +769,7 @@ function paintBuilder(mount, view, repaintSaved) {
       "These are every field the customer list returns. Industry, segment, seat count, tenure and contacts exist on a customer but only one customer at a time, so counting a rule on them would need one request per customer and they are left out rather than guessed at.";
     rulesMount.append(ceiling);
 
-    paintPreview();
+    requestPreview();
   }
 
   function groupBlock(group, gi) {
@@ -1082,7 +780,7 @@ function paintBuilder(mount, view, repaintSaved) {
       const row = el("div", "sg-row");
       row.append(
         button("+ Add a rule", "btn tiny", () => {
-          group.rules.push({ field: "arr", op: "gte", value: "" });
+          group.rules.push(newRule(view));
           rebuildRules();
         }),
       );
@@ -1104,7 +802,7 @@ function paintBuilder(mount, view, repaintSaved) {
     const foot = el("div", "sg-row");
     foot.append(
       button("+ OR", "btn tiny", () => {
-        group.rules.push({ field: "arr", op: "gte", value: "" });
+        group.rules.push(newRule(view));
         rebuildRules();
       }),
     );
@@ -1116,19 +814,19 @@ function paintBuilder(mount, view, repaintSaved) {
     const row = el("div", "sg-row");
     row.append(el("span", "sg-orlead sg-join or", ri === 0 ? "" : "or"));
 
-    const field = fieldById(rule.field) ?? FIELDS[0];
+    const field = fieldById(view, rule.field) ?? view.fields[0];
 
     row.append(
       select(
-        FIELDS.map((f) => [f.id, f.needsRun && !view.hasRun ? `${f.label} (needs a run)` : f.label]),
+        view.fields.map((f) => [f.id, f.needsRun && !view.hasRun ? `${f.label} (needs a run)` : f.label]),
         field.id,
         (v) => {
-          rule.field = v;
           // The operator list and the value control both depend on the field, so
           // the row is rebuilt rather than patched. Resetting to the first legal
           // operator avoids "Plan is at least".
-          const nf = fieldById(v);
-          rule.op = opsFor(nf)[0][0];
+          const nf = fieldById(view, v);
+          rule.field = v;
+          rule.op = opsFor(view, nf)[0]?.[0] ?? "is";
           rule.value = "";
           rebuildRules();
         },
@@ -1136,14 +834,14 @@ function paintBuilder(mount, view, repaintSaved) {
     );
 
     row.append(
-      select(opsFor(field), rule.op, (v) => {
+      select(opsFor(view, field), rule.op, (v) => {
         rule.op = v;
-        if (!needsValue(v)) rule.value = "";
+        if (!needsValue(view, field, v)) rule.value = "";
         rebuildRules();
       }),
     );
 
-    if (needsValue(rule.op)) row.append(valueControl(field, rule));
+    if (needsValue(view, field, rule.op)) row.append(valueControl(field, rule));
 
     row.append(el("span", "sg-grow"));
     const x = button("✕", "sg-x", () => {
@@ -1162,31 +860,16 @@ function paintBuilder(mount, view, repaintSaved) {
 
   function valueControl(field, rule) {
     // The value is edited live, so the preview must update WITHOUT redrawing this
-    // input — otherwise the caret jumps on every keystroke. Only paintPreview runs.
-    if (field.id === "label") {
-      const opts = Object.entries(view.labels).map(([k, text]) => [k, String(text)]);
-      if (!opts.length) return el("span", "sg-muted", "no states available");
-      if (!rule.value) rule.value = opts[0][0];
-      return select(opts, rule.value, (v) => {
+    // input — otherwise the caret jumps on every keystroke. Only the preview runs.
+    const options = choicesFor(view, field);
+    if (options.length && (rule.op === "is" || rule.op === "isnot")) {
+      if (!rule.value) rule.value = options[0][0];
+      return select(options, rule.value, (v) => {
         rule.value = v;
-        paintPreview();
+        requestPreview();
       });
     }
-
-    if (field.choices && (rule.op === "is" || rule.op === "isnot")) {
-      const values = field.id === "plan" ? view.plans : view.owners;
-      if (values.length) {
-        if (!rule.value) rule.value = values[0];
-        return select(
-          values.map((v) => [v, v]),
-          rule.value,
-          (v) => {
-            rule.value = v;
-            paintPreview();
-          },
-        );
-      }
-    }
+    if (field.choices === "labels" && !options.length) return el("span", "sg-muted", "no states available");
 
     const input = el("input", "sg-in");
     input.type = field.type === "money" || field.type === "number" ? "number" : field.type === "date" ? "date" : "text";
@@ -1195,39 +878,69 @@ function paintBuilder(mount, view, repaintSaved) {
     input.value = rule.value ?? "";
     input.addEventListener("input", () => {
       rule.value = input.value;
-      paintPreview();
+      requestPreview();
     });
     return input;
   }
 
-  /** The count, before saving. This is the reason the screen exists. */
-  function paintPreview() {
+  /* ── the preview ────────────────────────────────────────────────────────
+   *
+   * The count, before saving. This is the reason the screen exists, and it is
+   * the SERVER's count: the same function that will count the segment once it
+   * is saved, so what you try is what you get.
+   */
+
+  let lastPreview = null;
+
+  const runPreview = debounced(220, async (stillWanted) => {
+    let res;
+    try {
+      res = await view.api.preview(draft.groups, 8);
+    } catch (err) {
+      res = { ok: false, error: reasonFrom(null, err) };
+    }
+    // A reply for a rule the user has already edited away must never land.
+    if (!stillWanted()) return;
+    lastPreview = res;
+    paintPreview(false);
+  });
+
+  function requestPreview() {
+    paintPreview(true);
+    runPreview();
+  }
+
+  function paintPreview(pending) {
     previewMount.replaceChildren();
 
     const panel = el("div", "sg-card");
     const body2 = el("div", "sg-body");
 
     body2.append(el("div", "col-head", "This rule reads"));
-    body2.append(ruleSentence(draft, view));
+    body2.append(ruleSentence(view, draft));
 
-    const matched = matchRows(view.rows, draft);
-    const arr = matched.reduce((t, c) => t + (Number.isFinite(Number(c.arr)) ? Number(c.arr) : 0), 0);
-    const open = matched.reduce((t, c) => t + (Number(c.openDecisions) || 0), 0);
+    const res = lastPreview;
+    if (res && !res.ok) {
+      body2.append(errorBox("This rule could not be counted", reasonFrom(res)));
+      panel.append(body2);
+      previewMount.append(panel);
+      return;
+    }
 
-    const count = el("div", "sg-count");
-    count.append(el("span", "sg-big", String(matched.length)));
-    count.append(el("span", "sg-stat", `of ${view.rows.length} customers match`));
+    const count = el("div", pending ? "sg-count pending" : "sg-count");
+    count.append(el("span", "sg-big", res ? String(res.count) : "…"));
+    count.append(el("span", "sg-stat", `of ${view.total} customers match`));
     const a = el("span", "sg-stat");
-    a.append(el("b", null, money(ctx, arr, view.currency)));
+    a.append(el("b", null, res ? (res.arrLabel ?? money(ctx, res.arr, view.currency)) : "—"));
     a.append(document.createTextNode(" ARR"));
     count.append(a);
     const o = el("span", "sg-stat");
-    o.append(el("b", null, String(open)));
+    o.append(el("b", null, res ? String(res.openDecisions ?? 0) : "—"));
     o.append(document.createTextNode(" open decisions"));
     count.append(o);
     body2.append(count);
 
-    const incomplete = countIncomplete(draft);
+    const incomplete = countIncomplete(view, draft);
     if (incomplete) {
       body2.append(
         el(
@@ -1240,13 +953,18 @@ function paintBuilder(mount, view, repaintSaved) {
 
     panel.append(body2);
     // Eight is enough to recognise the group and short enough to read without
-    // scrolling past the controls that produced it. matchedList prints its own
-    // "showing the first 8 of N" line, so nothing is added here.
-    panel.append(matchedList(matched, view, 8));
+    // scrolling past the controls that produced it.
+    if (res?.ok) panel.append(matchedList(res, view));
     previewMount.append(panel);
   }
 
   rebuildRules();
+}
+
+/** The row a "+ OR" or "+ AND" button starts from: the first field, first operator. */
+function newRule(view) {
+  const f = view.fields.find((x) => x.id === "arr") ?? view.fields[0];
+  return { field: f.id, op: opsFor(view, f)[0]?.[0] ?? "is", value: "" };
 }
 
 /* ── the description box ────────────────────────────────────────────────── */
@@ -1256,7 +974,7 @@ function describeBox(view, proposalMount, afterApply) {
   const head = el("header");
   head.append(el("h3", null, "Describe the group"));
   head.append(el("span", "sg-grow"));
-  head.append(el("span", "sg-muted", "read locally · never applied on its own"));
+  head.append(el("span", "sg-muted", "never applied on its own"));
   box.append(head);
 
   const body = el("div", "sg-body");
@@ -1266,69 +984,100 @@ function describeBox(view, proposalMount, afterApply) {
   body.append(ta);
 
   const row = el("div", "sg-row");
-  row.append(
-    button("Read this", "btn", async () => {
-      proposalMount.replaceChildren();
-      const text = ta.value.trim();
-      if (!text) return;
+  const read = button("Read this", "btn", async () => {
+    proposalMount.replaceChildren();
+    const text = ta.value.trim();
+    if (!text) return;
 
-      // The model path is tried first and always throws in this build. Its words
-      // are shown rather than swallowed, so nobody is left believing a model read
-      // the sentence.
-      let modelNote = "";
-      try {
-        await SEGMENTS.describe(text);
-      } catch (e) {
-        modelNote = String(e?.message ?? e);
-      }
-
-      const read = readDescription(text, view);
-      proposalMount.append(proposalCard(read, modelNote, view, afterApply));
-    }),
-  );
+    read.disabled = true;
+    proposalMount.append(el("p", "sg-muted", "Reading…"));
+    let res;
+    try {
+      res = await view.api.describe(text);
+    } catch (err) {
+      res = { ok: false, error: reasonFrom(null, err) };
+    }
+    read.disabled = false;
+    proposalMount.replaceChildren();
+    if (!res?.ok) {
+      proposalMount.append(errorBox("That description could not be read", reasonFrom(res)));
+      return;
+    }
+    proposalMount.append(await proposalCard(res, view, afterApply));
+  });
+  row.append(read);
   body.append(row);
 
   const help = el("p", "sg-muted");
   help.textContent =
-    "This is a fixed list of phrases matched in your browser, not a model — no route in this build accepts a sentence. It only writes a plan or an owner that already exists in your data, and it tells you which of your words it did not use.";
+    "A model reads this when one is connected. When none is, a fixed list of phrases reads it in the workspace instead — and the answer says which of the two it was. Either way it only writes a plan, an owner or a state that already exists in your data, it tells you which of your words it did not use, and nothing is applied until you press Use.";
   body.append(help);
 
   box.append(body);
   return box;
 }
 
-function proposalCard(read, modelNote, view, afterApply) {
+async function proposalCard(read, view, afterApply) {
   const box = el("div", "sg-prop");
+  const rules = Array.isArray(read.rules) ? read.rules : [];
+  const notes = Array.isArray(read.notes) ? read.notes : [];
+  const ignored = Array.isArray(read.ignored) ? read.ignored : [];
 
-  if (modelNote) {
-    const n = el("div", "sg-muted");
-    n.append(el("b", null, "Model reading unavailable: "));
-    n.append(document.createTextNode(modelNote + " Read with the local phrase list instead."));
-    box.append(n);
+  // WHO read it, stated before what it found. A user who thinks a model wrote
+  // these rules judges them differently from one who knows a phrase list did.
+  const who = el("div", "sg-muted");
+  if (read.source === "model") {
+    who.append(el("b", null, "Read by a model"));
+    if (read.model) who.append(document.createTextNode(` (${read.model})`));
+    who.append(document.createTextNode(". Every rule below was checked against your own data before it was offered."));
+  } else {
+    who.append(el("b", null, "Read offline, without a model"));
+    who.append(
+      document.createTextNode(
+        read.modelError
+          ? `. The model could not be used: ${read.modelError} A fixed list of phrases read it instead.`
+          : ". A fixed list of phrases in this workspace read it.",
+      ),
+    );
   }
+  box.append(who);
 
-  if (!read.rules.length) {
+  if (!rules.length) {
     box.append(el("h4", null, "Nothing in that sentence matched a field"));
-    const p = el("p", "sg-muted");
-    p.textContent =
-      "No rule was made, and nothing was changed. The reader understands amounts (over $50k), renewal windows (renewing in 60 days), the customer states below, plan and owner names that exist in your data, open decisions and stale data.";
-    box.append(p);
-    if (read.ignored.length) box.append(ignoredWords(read.ignored));
+    box.append(
+      el(
+        "p",
+        "sg-muted",
+        "No rule was made, and nothing was changed. The reader understands amounts (over $50k), renewal windows (renewing in 60 days), the customer states in the State field, plan and owner names that exist in your data, open decisions and stale data.",
+      ),
+    );
+    for (const note of notes) box.append(el("div", "sg-muted", note));
+    if (ignored.length) box.append(ignoredWords(ignored));
     return box;
   }
 
-  box.append(el("h4", null, `Proposed: ${plural(read.rules.length, "rule", "rules")}`));
+  box.append(el("h4", null, `Proposed: ${plural(rules.length, "rule", "rules")}`));
 
-  // The proposal is shown as the same sentence the saved segment will show, so
-  // what is confirmed here and what appears in the list are the same object.
-  const preview = { groups: read.rules.map((r) => ({ rules: [r] })) };
-  box.append(ruleSentence(preview, view));
+  // The proposal is shown as the same sentence the saved segment will show, and
+  // counted by the same route, so what is confirmed here and what appears in the
+  // list are the same rule measured the same way.
+  const proposed = { groups: rules.map((r) => ({ rules: [r] })) };
+  box.append(ruleSentence(view, proposed));
 
-  const matched = matchRows(view.rows, preview);
-  box.append(el("div", "sg-stat", `${matched.length} of ${view.rows.length} customers would match.`));
+  const countLine = el("div", "sg-stat", "Counting…");
+  box.append(countLine);
+  try {
+    // Only the count is read here, so the smallest sample the route will give.
+    const res = await view.api.preview(proposed.groups, 1);
+    countLine.textContent = res?.ok
+      ? `${res.count} of ${view.total} customers would match.`
+      : `This could not be counted: ${reasonFrom(res)}`;
+  } catch (err) {
+    countLine.textContent = `This could not be counted: ${reasonFrom(null, err)}`;
+  }
 
-  for (const note of read.notes) box.append(el("div", "sg-muted", note));
-  if (read.ignored.length) box.append(ignoredWords(read.ignored));
+  for (const note of notes) box.append(el("div", "sg-muted", note));
+  if (ignored.length) box.append(ignoredWords(ignored));
 
   const actions = el("div", "sg-actions");
   actions.append(
@@ -1337,8 +1086,8 @@ function proposalCard(read, modelNote, view, afterApply) {
       // Each rule becomes its own AND group. "at risk over $50k" is read the way
       // a person reads it — both, not either — and every one of them is now an
       // ordinary editable row.
-      const existing = (draft.groups ?? []).filter((g) => (g.rules ?? []).some(isComplete));
-      draft.groups = existing.concat(read.rules.map((r) => ({ rules: [{ ...r }] })));
+      const existing = (draft.groups ?? []).filter((g) => (g.rules ?? []).some((r) => isComplete(view, r)));
+      draft.groups = existing.concat(rules.map((r) => ({ rules: [{ ...r }] })));
       box.remove();
       afterApply();
     }),

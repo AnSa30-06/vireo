@@ -19,3 +19,4 @@ export const eventId = () => id("evt");
 export const hypothesisId = () => id("hyp");
 export const callId = () => id("llm");
 export const workspaceId = () => id("ws");
+export const segmentId = () => id("seg");

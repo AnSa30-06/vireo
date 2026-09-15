@@ -20,11 +20,13 @@
 //     row, one click from the number to the definition that produced it, and it writes
 //     through decisionsSettingsSet. Nobody is sent to a settings page to edit prose.
 //
-// WHAT IS AND IS NOT WIRED, stated plainly because the screen states it too:
+// HOW THE TWO PATHS DIFFER, stated plainly because the screen states it too:
 //
-//   * A TYPED question is NOT answered. No route in this build accepts free text — see
-//     the stub directly below, which is the only thing a typed question reaches. It
-//     throws, and the throw is rendered verbatim.
+//   * A TYPED question goes to decisionsAsk, which matches it against a FIXED catalogue
+//     of intents and runs the hand-written query that intent owns. The model's only job
+//     there is to name an intent; it never writes a query. When no entry fits, the route
+//     refuses and lists what can be asked — and when no model answers at all, the match is
+//     made on keywords and the answer says so.
 //   * A PICKED question IS answered, for real, from the real routes. The questions in
 //     QUESTIONS below each run named routes with named filters and show what came back.
 //     Nothing on this page is generated, sampled or rounded into existence.
@@ -35,33 +37,23 @@
 
 export const title = "Ask";
 
-/* ══ THE ONE UNWIRED THING ══════════════════════════════════════════════════
+/* ══ THE TYPED PATH ═════════════════════════════════════════════════════════
  *
- * 🔴 NOT WIRED. This is the only path a typed question takes, and it is a stub on
- * purpose.
+ * One route, one shape. decisionsAsk returns exactly the answer or refusal object the
+ * built-in questions below build for themselves, so both paths go through the same
+ * answerCard() / refusalCard() and neither can drift into its own look.
  *
- * The backend exposes 31 actions under /x/ and every one of them is a structured read or
- * write with fixed parameters — decisionsOverview, decisionsList, decisionsCustomers,
- * decisionsGet, decisionsSettingsSet and so on. Not one of them accepts a sentence.
- *
- * The alternative to this stub would be to match the typed words against the built-in
- * questions and answer the closest one. That is exactly the failure this screen exists to
- * argue against: it answers a question nobody asked and shows a real number while doing
- * it, which is worse than silence because it looks right. So the typed path refuses, and
- * the closest built-ins are offered as SUGGESTIONS the person has to choose.
- *
- * To wire it: add a route that takes { question } and returns { answer, evidence[],
- * records[] } or an explicit refusal, then call it here and return the same shape
- * buildAnswer() already renders. Nothing else on this page has to change.
+ * 🔴 IT IS NOT TEXT-TO-SQL, AND THAT IS THE ARGUMENT. The server holds a fixed catalogue
+ * of questions it can answer, each owning a hand-written query. A model picks which entry
+ * the sentence means and fills its declared parameters; nothing a model writes reaches the
+ * database. When the sentence matches no entry, the route refuses and says what CAN be
+ * asked — it never answers the nearest question instead, because a real number computed
+ * for a question nobody asked is the failure this whole screen exists to avoid.
  */
-async function answerTypedQuestion(/* ctx, question */) {
-  throw new Error(
-    "Not wired yet: no route in this build turns a typed question into an answer. " +
-      "All 31 actions under /x/ are structured reads and writes with fixed parameters " +
-      "(decisionsOverview, decisionsList, decisionsCustomers, decisionsGet, …); none of them " +
-      "accepts free text. Vireo will not guess which question you meant and answer that one " +
-      "instead, so nothing is shown here until a question route exists.",
-  );
+async function answerTypedQuestion(ctx, question) {
+  const r = await ctx.api("decisionsAsk", { method: "POST", body: { question } });
+  if (!r?.ok) return routeRefusal("decisionsAsk", r);
+  return r.result;
 }
 
 /* ── DOM helpers ────────────────────────────────────────────────────────── */
@@ -326,7 +318,6 @@ const QUESTIONS = [
   {
     id: "needs-me",
     text: "What needs me today?",
-    keywords: "today now urgent overdue attention queue work on next priority",
     routes: ["decisionsOverview"],
     async run(ctx, env) {
       const r = await ctx.api("decisionsOverview");
@@ -374,7 +365,6 @@ const QUESTIONS = [
   {
     id: "arr-under-review",
     text: "How much ARR is under review?",
-    keywords: "arr money revenue risk churn amount exposed value dollars under review",
     routes: ["decisionsOverview", "decisionsList"],
     async run(ctx, env) {
       const [o, list] = await Promise.all([
@@ -427,7 +417,6 @@ const QUESTIONS = [
   {
     id: "expansion",
     text: "Where could we sell more seats?",
-    keywords: "expansion upsell grow seats more sell revenue opportunity buying",
     routes: ["decisionsList"],
     async run(ctx, env) {
       const r = await ctx.api("decisionsList", {
@@ -488,7 +477,6 @@ const QUESTIONS = [
   {
     id: "at-risk",
     text: "Which customers are at risk?",
-    keywords: "risk churn leaving unhappy danger losing customers accounts at risk",
     routes: ["decisionsCustomers"],
     async run(ctx, env) {
       const r = await ctx.api("decisionsCustomers", { query: { label: "at_risk", sort: "arr" } });
@@ -525,7 +513,6 @@ const QUESTIONS = [
   {
     id: "renewals",
     text: "Which renewals are coming up?",
-    keywords: "renewal renew contract expiring expiry coming up soon dates",
     routes: ["decisionsCustomers"],
     async run(ctx, env) {
       const r = await ctx.api("decisionsCustomers", { query: { sort: "renewal" } });
@@ -580,7 +567,6 @@ const QUESTIONS = [
   {
     id: "payment",
     text: "Who has a payment problem?",
-    keywords: "payment invoice billing failed card unpaid money owed collections",
     routes: ["decisionsCustomers", "decisionsList"],
     async run(ctx, env) {
       const [c, d] = await Promise.all([
@@ -620,7 +606,6 @@ const QUESTIONS = [
   {
     id: "unowned",
     text: "What is nobody working on?",
-    keywords: "unassigned nobody owner ownerless orphan who owns nothing assigned",
     routes: ["decisionsList"],
     async run(ctx, env) {
       const r = await ctx.api("decisionsList", {
@@ -657,7 +642,6 @@ const QUESTIONS = [
   {
     id: "stale",
     text: "Whose numbers should I not trust?",
-    keywords: "stale old data trust missing outdated gap usage feed broken",
     routes: ["decisionsCustomers"],
     async run(ctx, env) {
       const r = await ctx.api("decisionsCustomers", { query: { sort: "arr" } });
@@ -698,7 +682,6 @@ const QUESTIONS = [
   {
     id: "last-run",
     text: "What did the last analysis do?",
-    keywords: "run analysis last model tokens failed when ran history job",
     routes: ["decisionsRunStatus"],
     async run(ctx) {
       const r = await ctx.api("decisionsRunStatus");
@@ -752,34 +735,6 @@ const QUESTIONS = [
 ];
 
 const questionById = (id) => QUESTIONS.find((q) => q.id === id) ?? null;
-
-/* ── matching a typed question to the built-in ones ─────────────────────── */
-//
-// This ranks SUGGESTIONS and nothing else. It never picks a question and never runs one.
-// The moment a fuzzy match is allowed to answer, this screen becomes the thing it was
-// built to beat.
-
-const STOP = new Set(
-  "a an the is are was were do does did i me my our we us you your what which who whom how many much of in on for to and or with at by from show tell give list all any it its that this".split(
-    " ",
-  ),
-);
-
-const wordsOf = (s) => String(s).toLowerCase().match(/[a-z0-9']+/g) ?? [];
-
-function suggestionsFor(typed) {
-  const asked = new Set(wordsOf(typed).filter((w) => w.length > 2 && !STOP.has(w)));
-  if (!asked.size) return [];
-  const scored = QUESTIONS.map((q) => {
-    const bag = new Set([...wordsOf(q.text), ...wordsOf(q.keywords)]);
-    let hits = 0;
-    for (const w of asked) if (bag.has(w)) hits++;
-    return { q, score: hits / asked.size };
-  })
-    .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score);
-  return scored.slice(0, 3).map((s) => s.q);
-}
 
 /* ── the analysis run, shared by several remedies ───────────────────────── */
 
@@ -1170,53 +1125,17 @@ function refusalCard(ctx, q, ref, handlers) {
     card.append(wrap);
   }
 
-  return card;
-}
-
-/**
- * The typed-question case: the stub threw, and this renders the throw.
- *
- * It is deliberately NOT styled as a data refusal. "Vireo looked and could not answer" and
- * "this build cannot take a typed question at all" are different facts, and merging them
- * would hide a missing feature behind an honest-sounding sentence.
- */
-function unwiredCard(ctx, typed, err, handlers) {
-  const card = el("div", "panel ak-answer unwired");
-
-  const head = el("div", "ak-answer-head");
-  head.append(el("div", "ak-q", typed));
-  const tools = el("div", "ak-row");
-  tools.append(button("Save this question", "btn tiny ghost", () => handlers.saveTyped(typed)));
-  head.append(tools);
-  card.append(head);
-
-  const line = el("div", "ak-headline");
-  line.append(el("b", "ak-value ak-refused", "Not answered"));
-  card.append(line);
-
-  card.append(
-    el(
-      "p",
-      "ak-sentence",
-      "Typed questions are not answered in this build. Vireo could guess which of its own questions you meant and answer that one instead, but a confident answer to the wrong question is the failure this screen exists to avoid.",
-    ),
-  );
-
-  const e = el("div", "err");
-  e.append(el("strong", null, "Ask engine not wired. "));
-  e.append(document.createTextNode("The exact message from the code path your question reached:"));
-  e.append(el("code", null, String(err?.message ?? err)));
-  card.append(e);
-
-  const near = suggestionsFor(typed);
-  const wrap = el("div", "ak-evidence");
-  wrap.append(el("span", "col-head", near.length ? "You might mean one of these" : "Questions Vireo can answer"));
-  const row = el("div", "ak-row");
-  for (const q of near.length ? near : QUESTIONS.slice(0, 4)) {
-    row.append(button(q.text, "btn", () => handlers.ask(q)));
+  // The server's own catalogue, not a guess made here. These are BUTTONS and never an
+  // auto-answer: the moment a near miss is allowed to answer itself, this screen becomes
+  // the thing it was built to beat.
+  if (ref.suggestions?.length) {
+    const wrap = el("div", "ak-evidence");
+    wrap.append(el("span", "col-head", "Questions Vireo can answer"));
+    const row = el("div", "ak-row");
+    for (const text of ref.suggestions) row.append(button(text, "btn", () => handlers.askText(text)));
+    wrap.append(row);
+    card.append(wrap);
   }
-  wrap.append(row);
-  card.append(wrap);
 
   return card;
 }
@@ -1317,29 +1236,21 @@ export async function render(root, ctx) {
 
   const hint = el("div", "ak-hint");
   const bar = el("div", "ak-bar");
-  const askBtn = button("Ask", "btn btn-primary", async () => {
+  const askBtn = button("Ask", "btn btn-primary", () => {
     const typed = ta.value.trim();
     if (!typed) {
       hint.textContent = "Type a question first.";
       return;
     }
-    // The stub is the whole typed path. It throws; the throw is what the person sees.
-    try {
-      await answerTypedQuestion(ctx, typed);
-      // Unreachable while the stub throws. If a real route lands, it returns the same
-      // shape the built-ins do and goes through the same renderer.
-      hint.textContent = "";
-    } catch (err) {
-      if (isStale()) return;
-      showResult(unwiredCard(ctx, typed, err, handlers));
-    }
+    hint.replaceChildren();
+    askText(typed);
   });
   bar.append(askBtn);
   bar.append(
     el(
       "span",
       "ak-dim",
-      "Typed questions are not answered in this build — pick one below to get a real answer with records.",
+      "A typed question is matched to one of the questions Vireo can answer from your records. When none of them fits, it says so rather than answering the nearest one.",
     ),
   );
   composer.append(ta, bar, hint);
@@ -1354,7 +1265,7 @@ export async function render(root, ctx) {
   const idle = () =>
     emptyPanel(
       "Nothing asked yet",
-      "Pick one of the questions below. The answer comes back with its evidence, its definition and the records behind it, all on this screen.",
+      "Type a question above, or pick one below. The answer comes back with its evidence, its definition and the records behind it, all on this screen.",
     );
   resultHost.replaceChildren(idle());
 
@@ -1373,12 +1284,11 @@ export async function render(root, ctx) {
     reload,
     rerun: () => (current ? ask(current) : null),
     ask: (q) => ask(q),
+    askText: (text) => askText(text),
+    // Keyed on the TEXT, not the id: a typed question has no id, and two of them keyed on
+    // a shared null would let the first one block every later save.
     save: (q) => {
-      if (!store.saved.some((s) => s.id === q.id)) store.saved.push({ id: q.id, text: q.text, answerable: true });
-      paintSaved();
-    },
-    saveTyped: (text) => {
-      if (!store.saved.some((s) => s.text === text)) store.saved.push({ id: null, text, answerable: false });
+      if (!store.saved.some((s) => s.text === q.text)) store.saved.push({ id: q.id, text: q.text });
       paintSaved();
     },
     toggleFix: () => {
@@ -1431,6 +1341,19 @@ export async function render(root, ctx) {
     showResult(answerCard(ctx, q, out, handlers));
   }
 
+  /**
+   * A typed question, wrapped so it goes down exactly the same path as a picked one.
+   *
+   * It is given a `run` of its own rather than a branch inside ask(): "Ask again", the
+   * correction panel's re-run and the saved list all call ask(current), and a typed
+   * question that was not a question object would break all three at once.
+   */
+  function askText(text) {
+    ta.value = text;
+    store.draft = text;
+    return ask({ id: null, text, routes: ["decisionsAsk"], run: (c) => answerTypedQuestion(c, text) });
+  }
+
   /* the built-in question list */
   const menu = el("div", "panel ak-menu");
   const menuHead = el("div", "ak-sec-head");
@@ -1471,19 +1394,10 @@ export async function render(root, ctx) {
     for (const s of store.saved) {
       const row = el("div", "ak-saved-row");
       const q = s.id ? questionById(s.id) : null;
-      if (q) {
-        row.append(button(s.text, "ak-link", () => ask(q)));
-      } else {
-        row.append(el("span", null, s.text));
-        row.append(el("span", "chip warn", "not answerable yet"));
-        row.append(
-          button("Put it back in the box", "btn tiny ghost", () => {
-            ta.value = s.text;
-            store.draft = s.text;
-            ta.focus();
-          }),
-        );
-      }
+      // A saved question with no id was typed, so it goes back through decisionsAsk rather
+      // than through one of the built-ins. Both are re-askable; neither is a dead row.
+      row.append(button(s.text, "ak-link", () => (q ? ask(q) : askText(s.text))));
+      if (!q) row.append(el("span", "chip", "typed"));
       row.append(el("div", "ak-grow"));
       row.append(
         button("Remove", "btn tiny ghost", () => {
@@ -1594,7 +1508,6 @@ function styles() {
 .ak-answer.warn { border-left-color:var(--warn); }
 .ak-answer.bad { border-left-color:var(--danger); }
 .ak-answer.refused { border-left-color:var(--muted); border-style:dashed; }
-.ak-answer.unwired { border-left-color:var(--danger); }
 .ak-answer-head { display:flex; align-items:flex-start; gap:var(--s3); }
 .ak-q { flex:1 1 auto; font-size:var(--fs-md); font-weight:600; color:var(--text); }
 

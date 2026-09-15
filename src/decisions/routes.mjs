@@ -15,10 +15,12 @@ import * as workspace from "./workspace.mjs";
 import { importFolder, writeTemplates, CONTRACT } from "./ingest.mjs";
 import { generate, writeDataset, variant, VARIANTS } from "./synthetic.mjs";
 import { runAnalysis, rereason, asOfFor } from "./run.mjs";
+import { answerQuestion, CATALOGUE } from "./ask.mjs";
 import * as D from "./decisions.mjs";
 import * as A from "./actions.mjs";
 import { tick, overdueDays } from "./followup.mjs";
 import { getSettings, setSettings, getMeta, setMeta } from "./db.mjs";
+import * as S from "./segments.mjs";
 import { rules, editableThresholds, actionLabel } from "./rules.mjs";
 import { LABELS, severityRank } from "./situations.mjs";
 import { PATHS } from "../util/paths.mjs";
@@ -640,6 +642,135 @@ export const decisionRoutes = {
           events: db.prepare("SELECT COUNT(*) n FROM event WHERE account_id = ?").get(a.id).n,
         },
         asOf,
+      });
+    });
+  },
+
+  // --- segments ------------------------------------------------------------
+  //
+  // 🔴 EVERY ROUTE BELOW TAKES CRITERIA WRITTEN BY THE USER. None of them ever
+  // sees a field name, an operator or a value except through
+  // `S.compileCriteria`, which checks both against a fixed allowlist and binds
+  // every value with `?`. A route here must never assemble SQL of its own.
+
+  /**
+   * Every saved segment, with its live count, plus the field vocabulary.
+   *
+   * The vocabulary rides along because the page builds its field and operator
+   * menus from it. Two copies of that list - one in the browser deciding what to
+   * offer, one on the server deciding what to accept - is how a page ends up
+   * offering a rule the server refuses.
+   */
+  async decisionsSegments() {
+    return withDb((db) => {
+      const asOf = asOfFor(db);
+      const currency = getSettings(db).currency ?? "USD";
+      const hasRun = !!db.prepare("SELECT id FROM run ORDER BY started_at DESC LIMIT 1").get();
+      return ok({
+        segments: S.listSegments(db, { asOf, currency }),
+        ...S.fieldVocabulary(),
+        choices: S.groundingFor(db),
+        total: db.prepare("SELECT COUNT(*) n FROM account").get().n,
+        currency,
+        hasRun,
+        asOf,
+      });
+    });
+  },
+
+  /**
+   * Count a rule and show who matches, WITHOUT saving it.
+   *
+   * A rule you cannot try is a rule you cannot trust, so this is the route the
+   * builder calls on every edit. It is also the only way the count on screen and
+   * the count a saved segment reports can be guaranteed to be the same number:
+   * both come from `S.previewCriteria`.
+   */
+  async decisionsSegmentPreview({ body }) {
+    return withDb((db) => {
+      const asOf = asOfFor(db);
+      const r = S.previewCriteria(db, body?.groups ?? [], {
+        asOf,
+        currency: getSettings(db).currency ?? "USD",
+        limit: body?.limit,
+      });
+      if (!r.ok) return bad(r.error);
+      const { ok: _ignored, ...rest } = r;
+      return ok({ ...rest, asOf });
+    });
+  },
+
+  async decisionsSegmentCreate({ body }) {
+    return withDb((db) => S.createSegment(db, { name: body?.name, groups: body?.groups }));
+  },
+
+  /** Rename, re-rule, or both: the page's rename path sends only a name. */
+  async decisionsSegmentUpdate({ body }) {
+    if (!body?.id) return bad("which segment?");
+    return withDb((db) => S.updateSegment(db, body.id, { name: body.name, groups: body.groups }));
+  },
+
+  async decisionsSegmentDelete({ body }) {
+    if (!body?.id) return bad("which segment?");
+    return withDb((db) => S.deleteSegment(db, body.id));
+  },
+
+  /**
+   * Turn a sentence into criteria the user then confirms or edits.
+   *
+   * ⭐ NOTHING IS APPLIED HERE. The reply is a proposal: rules, the words it did
+   * not use, and notes about what it refused to guess. `source` says whether a
+   * model read it or the offline phrase list did, so nobody is left believing a
+   * model was involved when there was none.
+   */
+  async decisionsSegmentDescribe({ body }) {
+    return withDbAsync(async (db) => {
+      const r = await S.describeSegment({
+        db,
+        text: body?.text,
+        vocab: S.groundingFor(db),
+        // The page offers this so a user who does not want a model call can
+        // still use the box. Absent, a model is tried and falls back on its own.
+        useModel: body?.useModel !== false,
+      });
+      return r.ok ? ok(r) : bad(r.error);
+    });
+  },
+
+  // --- ask -----------------------------------------------------------------
+
+  /**
+   * Turn one typed question into an answer, or into an explicit refusal.
+   *
+   * 🔴 THIS IS NOT TEXT-TO-SQL, AND THE DIFFERENCE IS THE PRODUCT. The model
+   * names one entry in the fixed catalogue in ask.mjs and fills its declared
+   * parameters; nothing it returns reaches SQLite. `src/decisions/ask.mjs`
+   * carries the measurement that argues for it.
+   *
+   * POST rather than GET for two reasons that both matter: the question is the
+   * person's own words and does not belong in a URL that lands in logs, and the
+   * call writes an `llm_call` audit row.
+   *
+   * `noModel` mirrors `decisionsRun`: it forces the keyword path, which is how
+   * the offline behaviour is exercised without a gateway.
+   */
+  async decisionsAsk({ body }) {
+    const question = String(body?.question ?? "").trim();
+    if (!question) return bad("type a question first");
+    // The catalogue is matched on words, so a wall of text is never a better
+    // match than a sentence - it just costs tokens and fills the audit row.
+    if (question.length > 400) return bad("that question is too long to match against the catalogue (400 characters at most)");
+    return withDbAsync(async (db) => {
+      const r = await answerQuestion(db, { question, noModel: body?.noModel === true });
+      return ok({
+        result: r.result,
+        source: r.source,
+        intent: r.intent,
+        model: r.model,
+        asOf: r.asOf,
+        // What CAN be asked, so a refusing page never has to hardcode the list
+        // and drift from the server that decides it.
+        catalogue: CATALOGUE.map((i) => ({ id: i.id, question: i.question, counts: i.counts })),
       });
     });
   },

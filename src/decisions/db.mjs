@@ -234,6 +234,28 @@ export const MIGRATIONS = [
   );
   CREATE INDEX llm_call_run ON llm_call(run_id);
   `,
+
+  // v2: saved segments.
+  //
+  // `criteria_json` holds the STRUCTURED rule - {"groups":[{"rules":[{field,
+  // op, value}]}]} - and never a SQL fragment. The compiler in segments.mjs
+  // turns it into a parameterised query against a fixed field allowlist, so a
+  // stored segment can only ever reach the columns that list names. A segment
+  // that stored SQL would be a stored injection, executed every time somebody
+  // opened the page.
+  //
+  // No unique index on `name`: the duplicate check is done in code so the user
+  // gets a sentence instead of a constraint error, and "Big accounts" and "big
+  // accounts" are the same name to a reader even though they differ to SQLite.
+  `
+  CREATE TABLE segment (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    criteria_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  `,
 ];
 
 /**
