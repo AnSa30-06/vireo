@@ -11,7 +11,7 @@ import os from "node:os";
 import path from "node:path";
 import { readWorkbook, detectHeaderRow, normaliseHeaders, coerce } from "../../src/tools/spreadsheet.mjs";
 
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vireo-xlsx-"));
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "ledgerline-xlsx-"));
 
 /** Build a real .xlsx from a 2D array so the fixtures go through ExcelJS itself. */
 async function makeSheet(name, rows, { merges = [] } = {}) {

@@ -1,6 +1,6 @@
-// Vireo must be SELF-CONTAINED. It never reads another program's install.
+// Ledgerline must be SELF-CONTAINED. It never reads another program's install.
 //
-// 🔴 WHY THIS TEST EXISTS. Vireo 1.2.1 shipped a feature that reused an
+// 🔴 WHY THIS TEST EXISTS. Ledgerline 1.2.1 shipped a feature that reused an
 // OmniAgent install's model gateway, agent and Chromium, to save ~4 GB on first
 // run. Anmol had it removed on 2026-09-15: *"Remove that whole thing where I
 // allowed the usage of the same stack in the backend. That just messes things up
@@ -9,7 +9,7 @@
 //
 // ⚠️ The sharing was not merely redundant, it was harmful in a way that is easy
 // to re-introduce by accident: both apps start a model gateway on port 20129, so
-// the two installs fought whenever both were open, and Vireo's behaviour then
+// the two installs fought whenever both were open, and Ledgerline's behaviour then
 // depended on whether an unrelated program happened to be running. A feature
 // whose correctness depends on another app's process state is not a feature.
 //
@@ -65,7 +65,7 @@ test("no source file calls the removed borrow helpers", () => {
 
 test("Playwright is always pointed at our OWN browsers directory", () => {
   // Three files spawn something with this variable. If any of them ever points
-  // it at a path we did not choose, Vireo is silently running another program's
+  // it at a path we did not choose, Ledgerline is silently running another program's
   // Chromium again.
   const setters = [];
   for (const f of sourceFiles()) {

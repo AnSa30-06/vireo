@@ -233,7 +233,7 @@ function buildShell() {
   // The wordmark: a green V, drawn here rather than loaded. The CSP forbids
   // remote assets, and ../logo.svg is the chat app's mark, not this surface's.
   mark.append(icon(["M4.5 5.5 12 19.5l7.5-14"], 22));
-  brand.append(mark, el("b", null, "Vireo"));
+  brand.append(mark, el("b", null, "Ledgerline"));
   side.append(brand);
 
   side.append(buildWorkspaceSwitcher());
@@ -254,7 +254,7 @@ function buildShell() {
   // decisions/index.html uses a plain <a href="../">, which drops the token and
   // boots the chat app with TOKEN = "" - every /x/ call then 401s. Carry it.
   foot.append(
-    button("← Back to Vireo", "btn ghost block", () => {
+    button("← Back to Ledgerline", "btn ghost block", () => {
       location.href = "../?t=" + encodeURIComponent(TOKEN);
     }),
   );
@@ -262,7 +262,7 @@ function buildShell() {
 
   const main = el("main", "v2-main");
   const top = el("header", "v2-top");
-  ui.title = el("h1", null, "Vireo");
+  ui.title = el("h1", null, "Ledgerline");
   ui.chip = el("span", "chip warn");
   ui.chip.hidden = true;
   top.append(ui.title, ui.chip, el("div", "v2-grow"));
@@ -505,14 +505,14 @@ async function renderRoute() {
   for (const [id, node] of ui.navItems) node.classList.toggle("active", id === route.page);
 
   const token = ++renderToken;
-  ui.title.textContent = NAV.find((n) => n.id === route.page)?.label ?? "Vireo";
+  ui.title.textContent = NAV.find((n) => n.id === route.page)?.label ?? "Ledgerline";
   showLoading();
 
   // needsWorkspace is not an error: 25 of the 31 routes cannot answer anything
   // until a workspace is selected, so the shell asks for one here instead of
   // letting every page render its own 400.
   if (state.status?.needsWorkspace) return showWorkspaceOnboarding();
-  if (state.statusError) return showError(new Error(state.statusError), { heading: "Vireo could not be reached" });
+  if (state.statusError) return showError(new Error(state.statusError), { heading: "Ledgerline could not be reached" });
 
   let resolved;
   try {

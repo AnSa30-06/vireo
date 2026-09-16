@@ -1428,7 +1428,7 @@ views.settings = async (params, token) => {
   b8.append(el("h3", null, "How to use this"));
   b8.append(el("p", "note", "The manual is in this app: every screen, what the AI is and is not allowed to do, how to import your own data, and what this cannot do."));
   b8.append(button("Open the manual", "btn primary", () => go("#/help")));
-  b8.append(el("div", "hint", "Longer versions of the same pages ship in the docs/decisions folder where Vireo is installed."));
+  b8.append(el("div", "hint", "Longer versions of the same pages ship in the docs/decisions folder where Ledgerline is installed."));
   wrap.append(b8);
 };
 

@@ -5,22 +5,22 @@ one fact.
 
 ---
 
-## What Vireo does
+## What Ledgerline does
 
-Vireo reads spreadsheets about your customers. It then gives you a short list of customers that
+Ledgerline reads spreadsheets about your customers. It then gives you a short list of customers that
 need your attention this week.
 
 Each item on that list is a **decision**. A decision has an owner, a due date, a status, and the
 evidence that produced it. A decision comes back to you if you do not handle it.
 
-Vireo does not send email to your customers. It does not change your data. It reads, and it tells
+Ledgerline does not send email to your customers. It does not change your data. It reads, and it tells
 you what it found.
 
 ---
 
 ## The demo company
 
-The demo company is a made-up software business with **48 customers**. It exists so that you can
+The demo company is a made-up software business with **144 customers**. It exists so that you can
 see the product work before you import your own data.
 
 To load it, open **Data** and select the demo company. Then open **Today** and select **Run
@@ -28,10 +28,10 @@ analysis**.
 
 ### What is inside it
 
-The 48 customers are not random. Each one is planted with a known situation, and the count of each
+The 144 customers are not random. Each one is planted with a known situation, and the count of each
 is fixed:
 
-| How many | What is planted | What Vireo must do |
+| How many | What is planted | What Ledgerline must do |
 |---|---|---|
 | 29 | Healthy customers | Nothing |
 | 4 | Clear churn risk | Raise a decision, high or critical |
@@ -53,7 +53,7 @@ one:
 3. One customer has a renewal date that is close.
 4. One customer has a champion who went quiet.
 
-**Vireo must raise nothing for these four.** One warning sign on its own is not a problem. A tool
+**Ledgerline must raise nothing for these four.** One warning sign on its own is not a problem. A tool
 that reports all four is a tool you stop reading after a week.
 
 ### What the demo run produces
@@ -92,7 +92,7 @@ Every status change is a control on this screen. You can accept, start, mark as 
 resolve with an outcome, dismiss with a reason, reopen, and add a note.
 
 The evidence panel is on the right. It holds a dot grid, where one dot is one person, and a trend
-line. If a gap exists in the data, the trend line breaks. Vireo does not draw through a gap,
+line. If a gap exists in the data, the trend line breaks. Ledgerline does not draw through a gap,
 because a drawn gap is a number that nobody measured.
 
 ### Customers
@@ -104,10 +104,10 @@ metrics, their signals, and their decisions.
 
 Ask answers a question about your customers, in plain English.
 
-Vireo can answer **9 questions**. Each one has a database query that a person wrote by hand. A
+Ledgerline can answer **9 questions**. Each one has a database query that a person wrote by hand. A
 model chooses which of the 9 questions you asked. The model never writes the query.
 
-If none of the 9 fits your question, Vireo refuses. The refusal says what it checked and what you
+If none of the 9 fits your question, Ledgerline refuses. The refusal says what it checked and what you
 can ask instead. A refusal is better than a number that looks right and is wrong.
 
 Ask works with no model and no internet. It then matches your words against the 9 questions, and
@@ -118,7 +118,7 @@ the answer says that this is what happened.
 A segment is a saved group of customers, built from rules. You can build the rules by hand, or
 describe the group in words.
 
-If you describe a group in words, Vireo shows you the rules it wrote. You confirm them before they
+If you describe a group in words, Ledgerline shows you the rules it wrote. You confirm them before they
 are saved. A rule you cannot see is a rule you cannot trust.
 
 The count updates before you save, so you can try a rule first.
@@ -154,17 +154,17 @@ moment you create it.
 A **data scope** limits a key further. A scope names which questions the key can answer and which
 rows it can see. The server enforces the scope. Editing the address of the box cannot widen it.
 
-If you widen a scope while a live key uses it, Vireo refuses. It names the keys first, and waits
+If you widen a scope while a live key uses it, Ledgerline refuses. It names the keys first, and waits
 for you to confirm.
 
 ### Data
 
 Data brings customer data in. Drop files on the page, or select a folder on this computer.
 
-Vireo reads the header rows before it imports anything. It then tells you what is wrong, per
+Ledgerline reads the header rows before it imports anything. It then tells you what is wrong, per
 file, before the import.
 
-After an import, Vireo shows what it read, what it skipped, and the reason for each skip.
+After an import, Ledgerline shows what it read, what it skipped, and the reason for each skip.
 
 ### Settings
 
@@ -177,7 +177,7 @@ nudges happen. If the clock is pinned, the top bar says so.
 
 ## The 11 signals
 
-A signal is one measured fact about one customer. Vireo computes all 11 signals with code, not
+A signal is one measured fact about one customer. Ledgerline computes all 11 signals with code, not
 with a model. The same data always gives the same signal.
 
 | Signal | What it measures |
@@ -203,7 +203,7 @@ You can change every threshold in Settings. The shipped value is shown next to t
 
 ## What becomes a decision
 
-A single signal is never a decision. Vireo raises a decision only when signals combine.
+A single signal is never a decision. Ledgerline raises a decision only when signals combine.
 
 There are **4 kinds** of decision:
 
@@ -224,7 +224,7 @@ same answer.
 
 ## The 6 actions
 
-Vireo recommends one action per decision. It chooses from a fixed list of 6:
+Ledgerline recommends one action per decision. It chooses from a fixed list of 6:
 
 1. Executive outreach call
 2. Technical health review with the customer
@@ -233,7 +233,7 @@ Vireo recommends one action per decision. It chooses from a fixed list of 6:
 5. Contact the account owner about adding seats
 6. Keep watching; no action yet
 
-The model cannot invent a seventh action. If it tries, Vireo rejects the answer.
+The model cannot invent a seventh action. If it tries, Ledgerline rejects the answer.
 
 ---
 
@@ -246,14 +246,14 @@ Some rules hold this together:
 
 - If you dismiss a decision and nothing changes, it stays quiet for 14 days.
 - If you dismiss a decision and it gets worse, it comes back.
-- If a decision waits for more than 7 days, Vireo nudges you once.
-- If a decision passes its due date, Vireo reminds you once a day, not once a run.
+- If a decision waits for more than 7 days, Ledgerline nudges you once.
+- If a decision passes its due date, Ledgerline reminds you once a day, not once a run.
 - If you resolve a decision, you must record the outcome.
 - If you dismiss a decision, you must give a reason.
 
 ---
 
-## What Vireo will not do
+## What Ledgerline will not do
 
 - It will not send email to your customers.
 - It will not change your data. Every database connection is read-only.

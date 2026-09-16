@@ -1,9 +1,9 @@
-// The product is called Vireo. It must never introduce itself as anything else.
+// The product is called Ledgerline. It must never introduce itself as anything else.
 //
 // 🔴 THIS SHIPPED. Anmol's first instruction on this fork was "change up the name
 // of the app, don't show omniagent", and the rename script did almost all of it.
-// Two strings survived: `vireo doctor` printed "OMNI AGENT HEALTH CHECK" as its
-// banner, in src/setup/doctor.mjs and again in bin/vireo.mjs. Anyone running the
+// Two strings survived: `ledgerline doctor` printed "OMNI AGENT HEALTH CHECK" as its
+// banner, in src/setup/doctor.mjs and again in bin/ledgerline.mjs. Anyone running the
 // health check on a build sent to them saw the old product's name at the top of
 // the screen. It was found by running the command, not by reading the code -
 // which is the lesson worth keeping.
@@ -20,7 +20,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-process.env.VIREO_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "vireo-brand-"));
+process.env.LEDGERLINE_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "ledgerline-brand-"));
 
 const { pkg } = await import("../../src/util/paths.mjs");
 
@@ -63,7 +63,7 @@ test("no user-visible string calls the product OmniAgent", () => {
   assert.deepEqual(offenders, [], `these lines show the old product name to a user:\n  ${offenders.join("\n  ")}`);
 });
 
-test("the health check introduces itself as Vireo", async () => {
+test("the health check introduces itself as Ledgerline", async () => {
   // Checked on the rendered output rather than by grepping for a constant, so
   // moving the banner into a variable cannot quietly defeat this.
   const { renderDoctor } = await import("../../src/setup/doctor.mjs");
@@ -72,7 +72,7 @@ test("the health check introduces itself as Vireo", async () => {
     failed: 0,
     warned: 0,
   });
-  assert.match(rendered, /VIREO HEALTH CHECK/, "the health check banner must name this product");
+  assert.match(rendered, /LEDGERLINE HEALTH CHECK/, "the health check banner must name this product");
   assert.ok(!/OMNI AGENT/i.test(rendered), "the banner must not name the product it was forked from");
 });
 
@@ -109,4 +109,35 @@ test("no screen hard-codes how big the demo company is", () => {
     "these screens state a demo size of their own instead of reading it from the generator:\n  " +
       offenders.join("\n  "),
   );
+});
+
+test("no user-visible string still calls the product Vireo", () => {
+  // 🔴 THE SAME MISTAKE, ONE RENAME LATER. The test above exists because two
+  // strings survived the OmniAgent -> Vireo rename and printed the dead name at
+  // the top of the health check. Vireo -> Ledgerline is the second rename this
+  // codebase has been through, so the guard is written for the general case:
+  // whatever the product was called last time must not reach a screen.
+  //
+  // ⚠️ THREE KINDS OF "vireo" ARE LEGITIMATE AND MUST NOT BE FLAGGED:
+  //   1. The GitHub repository is genuinely still AnSa30-06/vireo. The updater
+  //      fetches releases from it, and a renamed URL is a 404.
+  //   2. src/util/paths.mjs deliberately looks in the OLD data folder, because
+  //      an install that already has one must keep reading its own workspaces.
+  //      See tests/unit/legacy-home.test.mjs - that is data loss, not branding.
+  //   3. VIREO_HOME is still honoured so an existing script or shortcut keeps
+  //      pointing at the same data.
+  const LEGACY_ON_PURPOSE = new Set(["src/util/paths.mjs"]);
+  const offenders = [];
+  for (const root of ROOTS) {
+    for (const f of jsFiles(root)) {
+      const rel = path.relative(pkg(), f).split(path.sep).join("/");
+      if (LEGACY_ON_PURPOSE.has(rel)) continue;
+      fs.readFileSync(f, "utf8").split("\n").forEach((line, i) => {
+        if (isComment(line)) return;
+        const cleaned = line.replace(/AnSa30-06\/vireo/g, "").replace(/vireo-updater/g, "");
+        if (/\bvireo\b/i.test(cleaned)) offenders.push(`${rel}:${i + 1}  ${line.trim().slice(0, 100)}`);
+      });
+    }
+  }
+  assert.deepEqual(offenders, [], `these lines show the previous product name to a user:\n  ${offenders.join("\n  ")}`);
 });

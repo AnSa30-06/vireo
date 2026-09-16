@@ -30,8 +30,8 @@ software; only the written explanation is missing.
 Causes, most likely first:
 
 - **The free model was busy.** Click **Try the AI again** on the decision.
-- **No provider key.** Vireo's free model pool is small and slow. Adding one
-  free key fixes most of this: open Vireo, go to **Free capacity**, pick a
+- **No provider key.** Ledgerline's free model pool is small and slow. Adding one
+  free key fixes most of this: open Ledgerline, go to **Free capacity**, pick a
   provider, paste a key.
 - **The model kept producing invalid answers.** It gets one retry with the
   problem explained, then the product stops rather than spending your allowance
@@ -46,10 +46,10 @@ which part it is on.
 
 If it has been more than five minutes:
 
-- Check the gateway is running: `vireo doctor`.
+- Check the gateway is running: `ledgerline doctor`.
 - Run without the AI to confirm everything else works:
   ```bash
-  vireo decisions run --no-model
+  ledgerline decisions run --no-model
   ```
   If that finishes quickly, the problem is the model, not the data.
 - A run that crashed leaves a lock that clears itself after ten minutes.
@@ -101,7 +101,7 @@ You are in demo mode. Settings > Demo mode, and turn it off.
 
 ## "It is slow"
 
-The rules are fast — 48 customers takes well under a second. All the time is the
+The rules are fast — 144 customers takes well under a second. All the time is the
 AI.
 
 - Lower **how many decisions the AI explains per run** in Settings.
@@ -119,8 +119,8 @@ re-import. The decisions and outcomes are gone.
 
 - **Activity** shows every run: how many customers, how many model calls, how
   many failed, and which model answered.
-- Logs are in `%LOCALAPPDATA%\Vireo\logs\`.
-- `vireo doctor` checks the gateway, the models and the network with real
+- Logs are in `%LOCALAPPDATA%\Ledgerline\logs\`.
+- `ledgerline doctor` checks the gateway, the models and the network with real
   requests.
-- `vireo diagnostics` writes a report with secrets stripped, for a bug
+- `ledgerline diagnostics` writes a report with secrets stripped, for a bug
   report.

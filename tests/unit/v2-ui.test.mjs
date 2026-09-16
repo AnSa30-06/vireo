@@ -13,7 +13,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-process.env.VIREO_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "vireo-v2-test-"));
+process.env.LEDGERLINE_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "ledgerline-v2-test-"));
 
 const { pkg } = await import("../../src/util/paths.mjs");
 const { decisionRoutes } = await import("../../src/decisions/routes.mjs");

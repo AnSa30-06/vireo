@@ -15,7 +15,7 @@ keep a record of what it did that you can read.
 
 **Analysis runs**, with the numbers that matter:
 
-> Analysis: 48 customers, 14 situations, 13 new decisions, 0 updated
+> Analysis: 144 customers, 42 situations, 39 new decisions, 0 updated
 > 10 explained by the AI · 4 model failures · 7,000 tokens · auto/smart
 
 That line tells you the cost and the reliability of every run. If failures are

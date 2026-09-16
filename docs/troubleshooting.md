@@ -3,7 +3,7 @@
 Start here:
 
 ```bash
-vireo doctor
+ledgerline doctor
 ```
 
 Every row is a live probe — a real model request, a real search, a real page fetch, a real
@@ -12,10 +12,10 @@ browser launch. Nothing reports OK because a file exists.
 For a bug report:
 
 ```bash
-vireo diagnostics
+ledgerline diagnostics
 ```
 
-Writes a sanitised JSON bundle to `%LOCALAPPDATA%\Vireo\logs\`. Secrets are redacted,
+Writes a sanitised JSON bundle to `%LOCALAPPDATA%\Ledgerline\logs\`. Secrets are redacted,
 and the exporter **refuses to write the file** if anything in it still matches a secret
 pattern. Look at it before you send it.
 
@@ -29,7 +29,7 @@ The free model pool is rate-limited right now.
   every model in the chain refused at once.
 - **Add a provider key.** One paid key removes this permanently:
   ```bash
-  vireo config key deepseek sk-...
+  ledgerline config key deepseek sk-...
   ```
 
 This is the most common failure on a fresh install and it is not a bug — it is what a free
@@ -38,18 +38,18 @@ tier under load looks like.
 ## "Gateway running — FAIL"
 
 ```bash
-vireo gateway status
-vireo gateway start
+ledgerline gateway status
+ledgerline gateway start
 ```
 
-If it will not start, read `%LOCALAPPDATA%\Vireo\logs\gateway.log`.
+If it will not start, read `%LOCALAPPDATA%\Ledgerline\logs\gateway.log`.
 
 - **Port 20129 already taken** — change it in
-  `%LOCALAPPDATA%\Vireo\config.json` (`gateway.port`) and re-run
-  `vireo setup`.
+  `%LOCALAPPDATA%\Ledgerline\config.json` (`gateway.port`) and re-run
+  `ledgerline setup`.
 - **First start is slow.** It is a Next.js application with database migrations; a cold
   first start can take a minute. The supervisor allows 180 s.
-- **`omniroute-not-installed`** — the bootstrap did not finish. Run *Set up Vireo* from
+- **`omniroute-not-installed`** — the bootstrap did not finish. Run *Set up Ledgerline* from
   the Start Menu again.
 
 ## OpenCode shows no models / "undefined is not an object (evaluating '$.models')"
@@ -57,7 +57,7 @@ If it will not start, read `%LOCALAPPDATA%\Vireo\logs\gateway.log`.
 The gateway credential is missing, so the OmniRoute plugin registered no provider.
 
 ```bash
-vireo setup --non-interactive
+ledgerline setup --non-interactive
 ```
 
 That re-mints the gateway token and rewrites the OpenCode configuration.
@@ -69,16 +69,16 @@ To confirm what the plugin saw, look for this line when OpenCode starts:
 ```
 
 If you see it, the plugin could not find `auth.json`. It resolves that path from
-`OPENCODE_DATA_DIR` — which the launcher sets. Launch through `vireo`, not by running
+`OPENCODE_DATA_DIR` — which the launcher sets. Launch through `ledgerline`, not by running
 `opencode` directly.
 
 ## Browser tasks fail
 
 ```bash
-vireo setup --browser
+ledgerline setup --browser
 ```
 
-Re-downloads Chromium into `%LOCALAPPDATA%\Vireo\browsers`.
+Re-downloads Chromium into `%LOCALAPPDATA%\Ledgerline\browsers`.
 
 - **"ref eN is not on the current page"** — expected and self-correcting. The page changed
   and the agent must re-snapshot. If it keeps happening the page is re-rendering constantly.
@@ -88,11 +88,11 @@ Re-downloads Chromium into `%LOCALAPPDATA%\Vireo\browsers`.
   yourself.
 - **"the browser needs a Node.js runtime and none was found"** — the browser runs in a
   separate Node process (see [architecture.md](architecture.md#playwright-runs-in-its-own-process)).
-  Launch through `vireo`, which uses the bundled runtime, rather than starting
+  Launch through `ledgerline`, which uses the bundled runtime, rather than starting
   `opencode` yourself.
 - **"the browser host did not start within 30s"** — look for `browser-host` lines in
-  `%LOCALAPPDATA%\Vireo\logs\`. A stale handshake file is safe to delete:
-  `%LOCALAPPDATA%\Vireo\browser-host.json`.
+  `%LOCALAPPDATA%\Ledgerline\logs\`. A stale handshake file is safe to delete:
+  `%LOCALAPPDATA%\Ledgerline\browser-host.json`.
 
 ## "Every keyless search provider is currently throttling this machine"
 
@@ -111,9 +111,9 @@ When you see this message:
 - **Add a search key.** This removes the limit permanently. Brave and Tavily both have free
   tiers:
   ```bash
-  vireo config key brave BSA...
+  ledgerline config key brave BSA...
   ```
-  Then put it first in `search.order` in `%LOCALAPPDATA%\Vireo\config.json`.
+  Then put it first in `search.order` in `%LOCALAPPDATA%\Ledgerline\config.json`.
 - **Point at your own SearXNG.** `SEARXNG_INSTANCE=https://my-searxng.example.com` stops the
   product depending on volunteer-run public instances.
 
@@ -152,7 +152,7 @@ The bootstrap is resumable: components already installed are skipped.
 It is unsigned. Check the published SHA-256 first:
 
 ```powershell
-Get-FileHash .\VireoSetup-1.1.9.exe -Algorithm SHA256
+Get-FileHash .\LedgerlineSetup-1.1.9.exe -Algorithm SHA256
 ```
 
 Then *More info* → *Run anyway*.
@@ -164,14 +164,14 @@ Free models are slow — 57 s for a short reply has been measured. The fix is a 
 You can also trade quality for speed:
 
 ```bash
-vireo config mode fast
+ledgerline config mode fast
 ```
 
 Check what it is actually doing:
 
 ```bash
-vireo usage      # measured tokens/sec per model, on your machine
-vireo route      # which model each kind of task gets
+ledgerline usage      # measured tokens/sec per model, on your machine
+ledgerline route      # which model each kind of task gets
 ```
 
 ## Antivirus interferes
@@ -183,8 +183,8 @@ appears in `gateway.log` as an immediate exit.
 ## Starting over
 
 ```bash
-vireo gateway stop
+ledgerline gateway stop
 ```
 
-Then delete `%LOCALAPPDATA%\Vireo` and re-run setup. That discards settings, saved
+Then delete `%LOCALAPPDATA%\Ledgerline` and re-run setup. That discards settings, saved
 keys, telemetry and the downloaded browser — the program files are untouched.

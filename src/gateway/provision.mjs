@@ -125,7 +125,7 @@ export async function provisionGatewayToken(opts = {}) {
       remedy:
         "The gateway's generated .env is missing. Delete " +
         PATHS.gatewayData +
-        " and run `vireo setup` again to regenerate it.",
+        " and run `ledgerline setup` again to regenerate it.",
     };
   }
 
@@ -133,7 +133,7 @@ export async function provisionGatewayToken(opts = {}) {
   const connect = () =>
     postJson(
       `${base}/api/cli/connect`,
-      { password: pw, name: "vireo", scope: "admin" },
+      { password: pw, name: "ledgerline", scope: "admin" },
       { timeoutMs: 20000 }
     );
 
@@ -151,7 +151,7 @@ export async function provisionGatewayToken(opts = {}) {
         ok: false,
         reason: "the gateway is rate-limiting sign-in attempts",
         remedy:
-          "Too many failed attempts in a row. Close Vireo, reopen it, and try again - " +
+          "Too many failed attempts in a row. Close Ledgerline, reopen it, and try again - " +
           "restarting the gateway clears this. Nothing is wrong with your key or your settings.",
       };
     }
@@ -173,7 +173,7 @@ export async function provisionGatewayToken(opts = {}) {
         ok: false,
         reason: `the gateway rejected its own generated password and it could not be reset (${reset.reason})`,
         remedy:
-          "Stop the gateway, delete " + PATHS.gatewayData + " and run `vireo setup` again. " +
+          "Stop the gateway, delete " + PATHS.gatewayData + " and run `ledgerline setup` again. " +
           "That discards gateway history but not your saved keys.",
       };
     }

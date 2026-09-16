@@ -1,4 +1,4 @@
-// Data — getting customer data into Vireo, and the workspaces that hold it.
+// Data — getting customer data into Ledgerline, and the workspaces that hold it.
 //
 // THE HONEST CLAIM THIS SCREEN HAS TO CARRY.
 // There is exactly one way in: a FOLDER on this computer holding CSV files with
@@ -272,7 +272,7 @@ async function inspectFiles(files, contract) {
     }
     const allowed = new Set([...(spec.req ?? []), ...(spec.opt ?? [])]);
     const extra = headers.filter((h) => h && !allowed.has(h));
-    if (extra.length) entry.note = `Columns Vireo will ignore: ${extra.join(", ")}`;
+    if (extra.length) entry.note = `Columns Ledgerline will ignore: ${extra.join(", ")}`;
     known.push(entry);
   }
 
@@ -289,10 +289,10 @@ async function inspectFiles(files, contract) {
       unknown.push({
         name: file.name,
         kind: "csv",
-        why: "Vireo matches on the exact file name. Rename it to one of the names above, or leave it out.",
+        why: "Ledgerline matches on the exact file name. Rename it to one of the names above, or leave it out.",
       });
     } else {
-      unknown.push({ name: file.name, kind: "other", why: "Not a CSV. Vireo will not open it." });
+      unknown.push({ name: file.name, kind: "other", why: "Not a CSV. Ledgerline will not open it." });
     }
   }
 
@@ -435,7 +435,7 @@ function checkPanel(result, folderName) {
       problems ? "dx-verdict dx-bad-text" : "dx-verdict dx-ok-text",
       problems
         ? `${problems} of these would stop the import. Fix them in the files, then import the folder.`
-        : "These files pass the checks Vireo can run before reading them. Import the folder to load them.",
+        : "These files pass the checks Ledgerline can run before reading them. Import the folder to load them.",
     ),
   );
 
@@ -660,7 +660,7 @@ function importPanel(ctx, page) {
     el(
       "p",
       "dx-sub",
-      "Vireo opens the folder itself, so it needs the path. The picker is the only way to give it one — a browser is never told where a dropped file lives on this computer.",
+      "Ledgerline opens the folder itself, so it needs the path. The picker is the only way to give it one — a browser is never told where a dropped file lives on this computer.",
     ),
   );
 
@@ -767,7 +767,7 @@ function dropPanel(ctx, page) {
     if (!list.length) {
       slot.replaceChildren(
         errBox(
-          "Nothing was dropped that Vireo can read.",
+          "Nothing was dropped that Ledgerline can read.",
           "Drop the folder that holds the CSV files, or the CSV files themselves.",
         ),
       );
@@ -952,7 +952,7 @@ function templatesPanel(ctx, page) {
     el(
       "p",
       "dx-sub",
-      "This is the whole list. Vireo reads these files and nothing else — there is no connector to a CRM, a billing system or a warehouse, and this window cannot reach the internet.",
+      "This is the whole list. Ledgerline reads these files and nothing else — there is no connector to a CRM, a billing system or a warehouse, and this window cannot reach the internet.",
     ),
   );
 
@@ -1205,7 +1205,7 @@ export async function render(root, ctx) {
     el(
       "p",
       "dx-sub dx-claim",
-      "Vireo reads CSV files from a folder on this computer. That is the only way in, and this is the whole list of what it reads.",
+      "Ledgerline reads CSV files from a folder on this computer. That is the only way in, and this is the whole list of what it reads.",
     ),
   );
   wrap.append(head);

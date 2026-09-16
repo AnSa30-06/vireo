@@ -1,5 +1,5 @@
 @echo off
-rem Vireo - portable launcher.
+rem Ledgerline - portable launcher.
 setlocal
 set "HERE=%~dp0"
 if not exist "%HERE%node\node.exe" (
@@ -9,6 +9,6 @@ if not exist "%HERE%node\node.exe" (
   exit /b 1
 )
 set "PATH=%HERE%node;%PATH%"
-"%HERE%node\node.exe" "%HERE%app\bin\vireo.mjs" %*
+"%HERE%node\node.exe" "%HERE%app\bin\ledgerline.mjs" %*
 if errorlevel 1 pause
 endlocal

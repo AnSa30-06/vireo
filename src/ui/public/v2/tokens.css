@@ -1,4 +1,4 @@
-/* Vireo v2 design system.
+/* Ledgerline v2 design system.
    One file, loaded by /v2/index.html before any page module. Everything here is
    local: the window runs under a content-security-policy that forbids the
    network, so there is no web font, no CDN and no external sheet.

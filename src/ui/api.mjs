@@ -82,7 +82,7 @@ const DIALOG_OWNER = [
 export const FOLDER_DIALOG = [
   ...DIALOG_OWNER,
   "$d = New-Object System.Windows.Forms.FolderBrowserDialog",
-  "$d.Description = 'Choose the folder Vireo should work in'",
+  "$d.Description = 'Choose the folder Ledgerline should work in'",
   "$d.ShowNewFolderButton = $true",
   "if ($d.ShowDialog($owner) -eq [System.Windows.Forms.DialogResult]::OK) { Write-Output $d.SelectedPath }",
   "$owner.Dispose()",
@@ -306,17 +306,17 @@ export const routes = {
   /**
    * "Finish setup" on the startup screen.
    *
-   * The installed layout puts VireoSetup.cmd beside Vireo.exe, one
+   * The installed layout puts LedgerlineSetup.cmd beside Ledgerline.exe, one
    * directory above the app. It opens its own console - the same thing the
    * installer's "Finish setup now" runs - so a person who unticked that box
    * gets exactly the flow they skipped, from the button in front of them.
    */
   async setupRun() {
-    const script = path.join(APP_ROOT, "..", "VireoSetup.cmd");
+    const script = path.join(APP_ROOT, "..", "LedgerlineSetup.cmd");
     if (!fs.existsSync(script)) {
       return bad(
-        'Open the Start Menu and run "Set up Vireo". ' +
-          "(A source checkout has no setup script: run node scripts/bootstrap.mjs, then node bin/vireo.mjs setup.)",
+        'Open the Start Menu and run "Set up Ledgerline". ' +
+          "(A source checkout has no setup script: run node scripts/bootstrap.mjs, then node bin/ledgerline.mjs setup.)",
       );
     }
     const { spawn } = await import("node:child_process");
@@ -926,7 +926,7 @@ export const routes = {
       await ensureRunning().catch(() => {});
       return bad(
         `The damaged database could not be moved aside: ${failed.join(", ")}. ` +
-          "Something still has the file open - close Vireo everywhere, then try again."
+          "Something still has the file open - close Ledgerline everywhere, then try again."
       );
     }
     // A rebuilt database runs every migration from scratch, which takes far

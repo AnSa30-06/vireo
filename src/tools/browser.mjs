@@ -34,7 +34,7 @@ let _pages = [];
 let _active = 0;
 
 function browsersPath() {
-  // Ours, and only ever ours. Vireo downloads its own Chromium into its own data
+  // Ours, and only ever ours. Ledgerline downloads its own Chromium into its own data
   // directory and never reads another program's install. See docs/sharing.md for
   // why the component-sharing that used to live here was removed.
   return PATHS.browsers;
@@ -55,7 +55,7 @@ export function chromiumInstalled() {
   // fail for any reason except a bug in us, and a catch-all here once caught
   // exactly that: a missing import threw a ReferenceError, this returned false,
   // and the doctor reported "Chromium is not installed" on a machine where it WAS
-  // installed. The advice that follows that message - `vireo setup --browser` -
+  // installed. The advice that follows that message - `ledgerline setup --browser` -
   // downloads 700 MB and then fails identically, because the download was never
   // the problem. A wrong diagnosis that sends someone on a long errand is worse
   // than a crash.

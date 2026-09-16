@@ -19,7 +19,7 @@
 // That is not hypothetical. While this was being written, HEAD of this very
 // repository had renamed the product, moved its data directory and added a
 // `zod` dependency across 90 files. A naive file-copier would have replaced
-// `bin/vireo.mjs` with nothing, pointed the app at an empty data folder,
+// `bin/ledgerline.mjs` with nothing, pointed the app at an empty data folder,
 // and imported a package that is not installed.
 import fs from "node:fs";
 import path from "node:path";
@@ -32,12 +32,12 @@ import { logger } from "../util/log.mjs";
 
 const log = logger("update");
 
-// 🔴 THIS repository, not the one Vireo was forked from. Pointing an updater
+// 🔴 THIS repository, not the one Ledgerline was forked from. Pointing an updater
 // at the upstream project offers the reader a different product's releases,
 // and `planUpdate` would then compare tags that share no history.
 const REPO = "AnSa30-06/vireo";
 const API = `https://api.github.com/repos/${REPO}`;
-const UA = "vireo-updater";
+const UA = "ledgerline-updater";
 
 /** Once a day. The reader is told; nothing is applied without them saying so. */
 export const CHECK_EVERY_MS = 24 * 60 * 60 * 1000;

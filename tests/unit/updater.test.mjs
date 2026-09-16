@@ -24,17 +24,17 @@ test("versions sort numerically, not as text", () => {
 test("a release that changes the SHAPE of the install is refused", () => {
   // 🔴 The case this was written against, and it was real, not imagined: while
   // this feature was being built, HEAD of this repository renamed the product
-  // from omni-agent to vireo, moved its data directory and added a `zod`
+  // from omni-agent to ledgerline, moved its data directory and added a `zod`
   // dependency across 90 files. Copying those files into an install would have
   // deleted the program the shortcuts point at, pointed the app at an empty
   // data folder, and imported a package that is not on disk.
   const oldPkg = { name: "omni-agent", bin: { "omni-agent": "bin/omni-agent.mjs" }, dependencies: { a: "1" } };
 
-  const renamed = structuralReasons(oldPkg, { ...oldPkg, name: "vireo" }, []);
+  const renamed = structuralReasons(oldPkg, { ...oldPkg, name: "ledgerline" }, []);
   assert.equal(renamed.length, 1);
   assert.match(renamed[0], /renamed/);
 
-  const moved = structuralReasons(oldPkg, { ...oldPkg, bin: { vireo: "bin/vireo.mjs" } }, []);
+  const moved = structuralReasons(oldPkg, { ...oldPkg, bin: { ledgerline: "bin/ledgerline.mjs" } }, []);
   assert.match(moved[0], /starts the app/);
 
   const deps = structuralReasons(oldPkg, { ...oldPkg, dependencies: { a: "1", zod: "^4" } }, []);

@@ -15,7 +15,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-process.env.VIREO_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "vireo-ask-test-"));
+process.env.LEDGERLINE_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "ledgerline-ask-test-"));
 
 const { openMemory, setMeta, setSettings } = await import("../../src/decisions/db.mjs");
 const { answerQuestion, CATALOGUE } = await import("../../src/decisions/ask.mjs");
@@ -264,7 +264,7 @@ test("an answer always says which catalogue question it actually answered", asyn
     const understood = r.result.evidence.find(([k]) => k === "Understood as");
     assert.ok(understood, `"${question}" produced no "Understood as" line`);
     assert.ok(CATALOGUE.some((i) => i.question === understood[1]));
-    assert.match(r.result.sentence, /^Vireo read this as "/, "the sentence must state the question that was answered, not only the evidence block");
+    assert.match(r.result.sentence, /^Ledgerline read this as "/, "the sentence must state the question that was answered, not only the evidence block");
     assert.ok(r.result.evidence.some(([k]) => k === "Query"), "every answer must name the query it ran");
     assert.ok(r.result.definition.length > 40, "every answer must say what it counted");
   }

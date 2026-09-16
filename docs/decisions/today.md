@@ -74,7 +74,7 @@ sent to the AI at all.
 
 ## What you should expect
 
-On a first run over 48 customers you might see ten to fifteen decisions. On a
+On a first run over the 144-customer demo you see about forty decisions. On a
 weekly run after that, one or two new ones, because everything else is already on
 your list and is updated in place rather than raised again.
 

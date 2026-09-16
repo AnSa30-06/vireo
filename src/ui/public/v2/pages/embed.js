@@ -24,11 +24,11 @@
 //   3. THE SECRET IS SHOWN ONCE. The server stores a hash and a 12-character
 //      prefix, so no screen and no route can ever print it again.
 //
-// ⚠️ WHAT THE SNIPPET HONESTLY IS. Vireo's server is a loopback server with a
-// per-launch token, so the embed works while Vireo is running on the machine
+// ⚠️ WHAT THE SNIPPET HONESTLY IS. Ledgerline's server is a loopback server with a
+// per-launch token, so the embed works while Ledgerline is running on the machine
 // that opens the page, and the token in the snippet changes every launch. The
 // key is what decides WHAT the widget can read; the token is what decides
-// whether it can reach Vireo at all. Both facts are printed next to the snippet
+// whether it can reach Ledgerline at all. Both facts are printed next to the snippet
 // rather than left for somebody to discover.
 //
 // Every string reaches the DOM through textContent. Customer names, scope names
@@ -271,7 +271,7 @@ function snippetFor({ secret, scopeId, token }) {
   if (token) url.searchParams.set("t", token);
   url.searchParams.set("key", secret ?? "PASTE-YOUR-EMBED-KEY-HERE");
   if (scopeId) url.searchParams.set("scope", scopeId);
-  return `<iframe\n  src="${url.toString()}"\n  title="Vireo"\n  width="100%"\n  height="460"\n  style="border:1px solid #e1e3e8;border-radius:10px"\n  loading="lazy"></iframe>`;
+  return `<iframe\n  src="${url.toString()}"\n  title="Ledgerline"\n  width="100%"\n  height="460"\n  style="border:1px solid #e1e3e8;border-radius:10px"\n  loading="lazy"></iframe>`;
 }
 
 /* ══ THE RULE BUILDER ══════════════════════════════════════════════════════
@@ -549,7 +549,7 @@ function paintScopes(mount, view, reload, onEdit) {
         el(
           "p",
           null,
-          "Revoking them is the safe outcome: a revoked key stops answering immediately. Vireo never lets a key outlive its scope, because a key with no scope reads the whole workspace.",
+          "Revoking them is the safe outcome: a revoked key stops answering immediately. Ledgerline never lets a key outlive its scope, because a key with no scope reads the whole workspace.",
         ),
       );
       const row = el("div", "eb-row");
@@ -749,7 +749,7 @@ function paintSecret(mount, view, made) {
     el(
       "p",
       null,
-      "Vireo stores a hash of this key and nothing else, so this is the only time it can be shown. If it is lost, revoke it and create another.",
+      "Ledgerline stores a hash of this key and nothing else, so this is the only time it can be shown. If it is lost, revoke it and create another.",
     ),
   );
   box.append(el("pre", "eb-code", made.secret));
@@ -759,7 +759,7 @@ function paintSecret(mount, view, made) {
     el(
       "p",
       "eb-muted",
-      "Vireo runs on this machine only, so the widget answers while Vireo is open on whichever computer loads the page. The t= value changes every time Vireo starts, so copy the snippet again after a restart.",
+      "Ledgerline runs on this machine only, so the widget answers while Ledgerline is open on whichever computer loads the page. The t= value changes every time Ledgerline starts, so copy the snippet again after a restart.",
     ),
   );
   box.append(button("I have copied it", "btn", () => mount.replaceChildren()));
@@ -882,7 +882,7 @@ export async function render(root, ctx) {
 /* ══ THE WIDGET ════════════════════════════════════════════════════════════
  *
  * Everything below runs ONLY inside /v2/embed-widget.html, which sets
- * data-vireo-embed-widget on its <html> element. The shell's dynamic import of
+ * data-ledgerline-embed-widget on its <html> element. The shell's dynamic import of
  * this module lands in a document that does not, so the management page above
  * never triggers any of it.
  *
@@ -989,7 +989,7 @@ async function bootWidget() {
   try {
     info = await api.info({ key, scopeId: scopeId || undefined, origin });
   } catch (err) {
-    page.append(errorBox("This widget could not reach Vireo", reasonFrom(null, err)));
+    page.append(errorBox("This widget could not reach Ledgerline", reasonFrom(null, err)));
     return;
   }
   if (!info?.ok) {
@@ -1047,7 +1047,7 @@ async function bootWidget() {
   }
 }
 
-if (typeof document !== "undefined" && document.documentElement?.dataset?.vireoEmbedWidget === "1") {
+if (typeof document !== "undefined" && document.documentElement?.dataset?.ledgerlineEmbedWidget === "1") {
   bootWidget().catch((err) => {
     const box = errorBox("This widget failed to start", String(err?.message ?? err));
     document.body.replaceChildren(box);

@@ -10,7 +10,7 @@ import * as B from "../../src/tools/browser.mjs";
 const FORM = "https://httpbin.org/forms/post";
 
 before(() => {
-  if (!B.chromiumInstalled()) throw new Error("Chromium is not installed; run `vireo setup --browser`");
+  if (!B.chromiumInstalled()) throw new Error("Chromium is not installed; run `ledgerline setup --browser`");
 });
 
 after(async () => {

@@ -157,7 +157,7 @@ changed, it is not even sent to the AI, so it costs nothing.
 
 ## What this costs to run
 
-On the demo company (48 customers), one run:
+On the demo company (144 customers), one run:
 
 | | |
 |---|---|

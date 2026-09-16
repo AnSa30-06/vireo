@@ -1,4 +1,4 @@
-# Sending Vireo to someone else
+# Sending Ledgerline to someone else
 
 Two things make the difference between "here is an app" and "here is an app that
 works": they should not have to sign up for anything, and they should not have to
@@ -8,22 +8,22 @@ know what an API key is.
 
 ## 1. Put a provider key inside the build
 
-Vireo runs with no key at all, but only a handful of free models still answer and
+Ledgerline runs with no key at all, but only a handful of free models still answer and
 they are slow. A single free key turns that into over a thousand models.
 
 You can ship **your** key inside the build, so the person you send it to opens the
 app and it simply works.
 
 ```bash
-vireo bundle-key mistral YOUR-MISTRAL-KEY
+ledgerline bundle-key mistral YOUR-MISTRAL-KEY
 ```
 
 It checks the key with a real call before saving it, so a mistyped key is caught
 on your machine rather than on theirs.
 
 ```bash
-vireo bundle-key show     # which providers are bundled (names only)
-vireo bundle-key clear    # remove it
+ledgerline bundle-key show     # which providers are bundled (names only)
+ledgerline bundle-key clear    # remove it
 ```
 
 ### 🔴 The key never enters git, and that is enforced
@@ -41,7 +41,7 @@ hand over.
 
 Get a free one from <https://console.mistral.ai/>. Mistral's free tier is by far
 the largest of the free providers — on the order of two thirds of all the free
-capacity Vireo knows about.
+capacity Ledgerline knows about.
 
 **Use a key you are willing to have used by someone else.** Whoever you send the
 build to can make requests with it. If that matters, make a separate key for
@@ -49,9 +49,9 @@ this and delete it later.
 
 ---
 
-## 1b. Vireo is self-contained, on purpose
+## 1b. Ledgerline is self-contained, on purpose
 
-Vireo downloads its own model gateway, its own agent and its own browser, into its
+Ledgerline downloads its own model gateway, its own agent and its own browser, into its
 own data directory. It never reads another program's install, and nothing it does
 depends on what else is on the machine.
 
@@ -60,7 +60,7 @@ depends on what else is on the machine.
 skip about 4 GB of downloading. It is gone, and it is not coming back.
 
 **Why it was removed.** Both apps start a model gateway on the same port (20129),
-so the two installs fought whenever both were open. That made Vireo's behaviour
+so the two installs fought whenever both were open. That made Ledgerline's behaviour
 depend on whether an unrelated program happened to be running, which is not a
 property a working install should have. Anmol's call:
 
@@ -75,8 +75,8 @@ property a working install should have. Anmol's call:
 ## 2. Build the installer
 
 ```bash
-npm run build:installer     # dist/VireoSetup-<version>.exe
-npm run build:portable      # dist/Vireo-Portable-<version>.zip
+npm run build:installer     # dist/LedgerlineSetup-<version>.exe
+npm run build:portable      # dist/Ledgerline-Portable-<version>.zip
 ```
 
 The build prints a line confirming the key went in:
@@ -85,7 +85,7 @@ The build prints a line confirming the key went in:
   Bundled provider key included: mistral
 ```
 
-If you do not see that line, the key is not in the build. Run `vireo bundle-key
+If you do not see that line, the key is not in the build. Run `ledgerline bundle-key
 show` and check.
 
 Send them **the .exe**. It is a per-user install, so it needs no administrator
@@ -101,7 +101,7 @@ password.
 2. It installs, then downloads the parts that are too big to ship — the model
    gateway, the agent and a browser. About 4 GB, ten to thirty minutes, once.
 3. Setup connects your bundled key and says so.
-4. They open Vireo. Models work with no signup.
+4. They open Ledgerline. Models work with no signup.
 
 Point them at:
 
@@ -111,7 +111,7 @@ Point them at:
 
 The fastest thing to tell someone to try:
 
-> Open Vireo, click **Decisions**, load the demo company, and press Run.
+> Open Ledgerline, click **Decisions**, load the demo company, and press Run.
 
 ---
 
@@ -142,6 +142,6 @@ It renames files, contents, the CLI, the environment variables and the data
 directory, and deliberately leaves the upstream OmniRoute and OpenCode projects
 and every real URL alone. Run the tests afterwards.
 
-⚠️ It changes the data directory (`%LOCALAPPDATA%\Vireo`), so an existing
+⚠️ It changes the data directory (`%LOCALAPPDATA%\Ledgerline`), so an existing
 install's workspaces and decisions will not be found by the renamed build. That
 is usually what you want for a fork; it is not what you want for an upgrade.

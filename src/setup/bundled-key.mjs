@@ -110,7 +110,7 @@ export async function applyBundledKey(opts = {}) {
   return { ok: true, added, failed };
 }
 
-/** Write the file. Used by `vireo bundle-key`. */
+/** Write the file. Used by `ledgerline bundle-key`. */
 export function write(providersList, dest = path.join(APP_ROOT, "installer", "bundled-key.json")) {
   const body = {
     $comment:

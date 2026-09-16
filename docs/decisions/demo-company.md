@@ -9,8 +9,8 @@ product can be tested against data whose right answers are known.
 Load it from **Settings > Data**, or:
 
 ```bash
-vireo decisions seed demo
-vireo decisions run
+ledgerline decisions seed demo
+ledgerline decisions run
 ```
 
 ---
@@ -19,7 +19,7 @@ vireo decisions run
 
 | Name | What it is |
 |---|---|
-| `demo` | 48 customers: healthy, at risk, expanding, payment problems, and the hard cases |
+| `demo` | 144 customers: healthy, at risk, expanding, payment problems, and the hard cases |
 | `demo-cohort` | The same 48, but a change hits most of them in the same three weeks |
 | `edge` | 20 customers built only from the hard cases |
 

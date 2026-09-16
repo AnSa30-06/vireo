@@ -16,7 +16,7 @@ import { dashboardPassword } from "./admin.mjs";
 
 /**
  * Named destinations, so nobody has to remember a route.
- * Keys are what the user types after `vireo dashboard`.
+ * Keys are what the user types after `ledgerline dashboard`.
  */
 export const PAGES = {
   home: { path: "/dashboard", label: "Overview" },

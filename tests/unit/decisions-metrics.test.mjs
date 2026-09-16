@@ -21,7 +21,7 @@ import os from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
-process.env.VIREO_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "vireo-metrics-test-"));
+process.env.LEDGERLINE_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "ledgerline-metrics-test-"));
 
 const { pkg } = await import("../../src/util/paths.mjs");
 const { openMemory, migrate, MIGRATIONS, getMeta, setMeta, setSettings } = await import("../../src/decisions/db.mjs");

@@ -1,8 +1,8 @@
-# Cobi: the source of truth for the Vireo clone
+# Cobi: the source of truth for the Ledgerline clone
 
 *Collected 2026-09-15 by live scrape of `hellocobi.com`, `docs.hellocobi.com` (all 66 pages
 indexed in their own `llms.txt`), `app.hellocobi.com`, and category research into why tools of
-this kind fail. **This document is the specification.** Where Vireo and this document disagree,
+this kind fail. **This document is the specification.** Where Ledgerline and this document disagree,
 this document wins. Where this document is silent, it says so rather than guessing.*
 
 **Facts** are quoted or closely paraphrased from a named source. **Read** is our analysis and

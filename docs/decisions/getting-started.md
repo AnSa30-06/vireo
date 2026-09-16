@@ -7,12 +7,12 @@ do not need to know anything about AI.
 
 ## Step 1. Open Decisions
 
-Open **Vireo**, then click **Decisions** in the list on the left.
+Open **Ledgerline**, then click **Decisions** in the list on the left.
 
 Or, from a terminal:
 
 ```bash
-vireo decisions
+ledgerline decisions
 ```
 
 The first time, it asks you three questions. That is the whole setup.
@@ -32,7 +32,7 @@ You can have more than one workspace later. They never share data.
 
 Two buttons.
 
-**Load the demo company** gives you 48 made-up customers with real-looking
+**Load the demo company** gives you 144 made-up customers with real-looking
 problems in them. Nothing of yours is used. **Do this first**, even if you have
 your own data: it takes one click and it shows you what the product does before
 you spend time on file formats.
@@ -50,7 +50,7 @@ Click **Run the analysis**.
 It reads every customer, works out what changed, and asks the AI about the ones
 that matter. A progress line tells you which part it is on.
 
-**It can take a minute.** Vireo works with free AI models by default, and
+**It can take a minute.** Ledgerline works with free AI models by default, and
 free models are slow. If you have added a provider key, it is much faster. See
 [Troubleshooting](troubleshooting.md) if it seems stuck.
 

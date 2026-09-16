@@ -17,7 +17,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-process.env.VIREO_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "vireo-cooldown-"));
+process.env.LEDGERLINE_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "ledgerline-cooldown-"));
 
 const { openMemory, setSettings, setMeta } = await import("../../src/decisions/db.mjs");
 const { answerQuestion, _resetModelDown } = await import("../../src/decisions/ask.mjs");

@@ -1,8 +1,8 @@
-# Vireo UI: the design spec
+# Ledgerline UI: the design spec
 
 *Generated with Gemini on 2026-09-15 from a written brief, then read back off the produced
 image. Conversation: `gemini.google.com/app/409b9ea558f96879`. This is the visual direction for
-the new interface — **not** the Claude-Code-style UI that OmniAgent and Vireo 1.2.x share.*
+the new interface — **not** the Claude-Code-style UI that OmniAgent and Ledgerline 1.2.x share.*
 
 ⚠️ **Image models garble small text.** The mockup renders one card title as *"champion aeview"*
 and clips the search placeholder. Copy comes from this document and from
@@ -38,7 +38,7 @@ tight packing.
 
 ## Sidebar
 
-Green `V` wordmark, "Vireo", and a pin icon at the far right. Then icon+label rows:
+Green `V` wordmark, "Ledgerline", and a pin icon at the far right. Then icon+label rows:
 
 **Today · Decisions · Customers · Ask · Segments · Data · Settings**
 

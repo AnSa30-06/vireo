@@ -292,7 +292,7 @@ export const MANUAL = [
           "NOT any row from your spreadsheets, ticket text, or notes.",
         ],
       },
-      { p: "To use it with no AI at all, open a terminal and run vireo decisions run --no-model. Every decision is still found. Only the written explanation is missing." },
+      { p: "To use it with no AI at all, open a terminal and run ledgerline decisions run --no-model. Every decision is still found. Only the written explanation is missing." },
       { p: "To delete everything, use Settings > Delete this workspace. It removes the data, every decision, the history and the outcomes." },
     ],
   },
@@ -314,7 +314,7 @@ export const MANUAL = [
           ],
         },
       },
-      { p: "Everything is slow, or models keep failing? Add one free provider key. Vireo works with no key at all, but only a handful of free models still answer and they are slow. Open the main Vireo window and use the Free capacity page." },
+      { p: "Everything is slow, or models keep failing? Add one free provider key. Ledgerline works with no key at all, but only a handful of free models still answer and they are slow. Open the main Ledgerline window and use the Free capacity page." },
     ],
   },
   {
@@ -328,7 +328,7 @@ export const MANUAL = [
         items: [
           "The thresholds were chosen, not calibrated against real churn data, and this has never been run on a real company's export.",
           "No live connections. No Stripe, HubSpot, Salesforce or Intercom. You export CSV files and import a folder.",
-          "It only runs while the app is open. Reminders and snooze expiry happen while Vireo is running.",
+          "It only runs while the app is open. Reminders and snooze expiry happen while Ledgerline is running.",
           "It cannot send anything, anywhere.",
           "Two actions only: draft an email, create a task.",
           "Four kinds of situation. It will not find a support quality problem or an onboarding failure.",
@@ -470,7 +470,7 @@ export function renderManual(wrap, go) {
     el(
       "p",
       "note",
-      "Fifteen longer pages ship with the program, in the docs/decisions folder where Vireo is installed. They cover the same ground with more examples. Settings shows the exact folder your data is in.",
+      "Fifteen longer pages ship with the program, in the docs/decisions folder where Ledgerline is installed. They cover the same ground with more examples. Settings shows the exact folder your data is in.",
     ),
   );
   wrap.append(foot);

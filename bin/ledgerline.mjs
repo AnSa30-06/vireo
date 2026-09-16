@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Vireo launcher.
+// Ledgerline launcher.
 //
 // With no arguments this is the thing a desktop shortcut runs: make sure the
 // gateway is up, make sure configuration exists, then hand over to OpenCode
@@ -34,41 +34,41 @@ const args = rest.filter((a) => !a.startsWith("--"));
 
 function usage() {
   say(`
-Vireo ${VERSION}
+Ledgerline ${VERSION}
 
-  vireo ui              Open the Vireo desktop app (recommended)
-  vireo [folder]        Start the agent in the terminal instead
-  vireo setup           First-run setup wizard
-  vireo doctor          Check that everything works
-  vireo usage           Show model, quota and token usage
-  vireo models          List the models available right now
-  vireo route           Show which model would be chosen and why
+  ledgerline ui              Open the Ledgerline desktop app (recommended)
+  ledgerline [folder]        Start the agent in the terminal instead
+  ledgerline setup           First-run setup wizard
+  ledgerline doctor          Check that everything works
+  ledgerline usage           Show model, quota and token usage
+  ledgerline models          List the models available right now
+  ledgerline route           Show which model would be chosen and why
 
-  vireo provider [list]   Free providers you can add, and what each gives you
-  vireo provider setup <id>    Step-by-step instructions for one provider
-  vireo provider add <id> <key>
-  vireo provider signin <id>
-  vireo dashboard [page]  Open the gateway's own web dashboard
-  vireo saving [tier]     Show or set how hard it compresses to save tokens
-  vireo routine list      Scheduled routines
-  vireo routine run <id>  Run one now
+  ledgerline provider [list]   Free providers you can add, and what each gives you
+  ledgerline provider setup <id>    Step-by-step instructions for one provider
+  ledgerline provider add <id> <key>
+  ledgerline provider signin <id>
+  ledgerline dashboard [page]  Open the gateway's own web dashboard
+  ledgerline saving [tier]     Show or set how hard it compresses to save tokens
+  ledgerline routine list      Scheduled routines
+  ledgerline routine run <id>  Run one now
 
-  vireo decisions         Open Decisions: turn customer data into decisions
-  vireo decisions run     Run the analysis now, without opening a window
-  vireo decisions seed [demo|demo-cohort|edge]   Load a demo company
-  vireo decisions list    Show the open decisions
+  ledgerline decisions         Open Decisions: turn customer data into decisions
+  ledgerline decisions run     Run the analysis now, without opening a window
+  ledgerline decisions seed [demo|demo-cohort|edge]   Load a demo company
+  ledgerline decisions list    Show the open decisions
 
-  vireo gateway start|stop|status
-  vireo config mode <fast|balanced|smart|quality|cheap>
-  vireo config key <provider> <api-key>
-  vireo config management-key <key>
-  vireo config show
-  vireo diagnostics                Export a sanitised diagnostics bundle
-  vireo bundle-key <provider> <key>   Ship a provider key inside your builds, so
+  ledgerline gateway start|stop|status
+  ledgerline config mode <fast|balanced|smart|quality|cheap>
+  ledgerline config key <provider> <api-key>
+  ledgerline config management-key <key>
+  ledgerline config show
+  ledgerline diagnostics                Export a sanitised diagnostics bundle
+  ledgerline bundle-key <provider> <key>   Ship a provider key inside your builds, so
                                       whoever you send this to has working
                                       models on first run. Never committed.
-  vireo bundle-key show               Which providers are bundled (names only)
-  vireo bundle-key clear              Remove the bundled key
+  ledgerline bundle-key show               Which providers are bundled (names only)
+  ledgerline bundle-key clear              Remove the bundled key
 
 Options
   --non-interactive   Never prompt (for installers and CI)
@@ -103,7 +103,7 @@ async function start() {
     say("");
     say(`The model gateway did not start (${gw.reason}).`);
     say(`Log: ${path.join(PATHS.logs, "gateway.log")}`);
-    say("Run `vireo doctor` for details. Starting anyway - models will not work.");
+    say("Run `ledgerline doctor` for details. Starting anyway - models will not work.");
     say("");
   }
 
@@ -156,7 +156,7 @@ async function main() {
       await ensureReady({ quiet: asJson }).catch(() => {});
       if (!asJson) {
         say("");
-        say("VIREO HEALTH CHECK");
+        say("LEDGERLINE HEALTH CHECK");
         say("");
       }
       const result = await runDoctor({
@@ -167,7 +167,7 @@ async function main() {
       // install configured and remember the model that actually answered, so
       // the app stops printing "First run: writing configuration..." and starts
       // on a model this machine has proven works. Setup tells people to run
-      // `vireo doctor` after a failure, and before this that never cleared
+      // `ledgerline doctor` after a failure, and before this that never cleared
       // the failure state.
       if (result.ok) {
         updateConfig({ configured: true });
@@ -266,7 +266,7 @@ async function main() {
           return process.exit(1);
         }
         if (!key) {
-          say("Usage: vireo config key <provider> <api-key>");
+          say("Usage: ledgerline config key <provider> <api-key>");
           return process.exit(1);
         }
         setSecret(a.secretName, key);
@@ -274,7 +274,7 @@ async function main() {
       }
       if (sub === "management-key") {
         if (!args[1]) {
-          say("Usage: vireo config management-key <key>");
+          say("Usage: ledgerline config management-key <key>");
           return process.exit(1);
         }
         setSecret("omniroute.managementKey", args[1]);
@@ -287,7 +287,7 @@ async function main() {
         say(`Credentials stored (names only): ${listSecretNames().join(", ") || "none"}`);
         return;
       }
-      say("Usage: vireo config <mode|key|management-key|show> ...");
+      say("Usage: ledgerline config <mode|key|management-key|show> ...");
       return process.exit(1);
     }
 
@@ -309,7 +309,7 @@ async function main() {
       if (sub === "add") {
         const [id, key] = [args[1], args[2]];
         if (!id) {
-          say("Usage: vireo provider add <id> <key>");
+          say("Usage: ledgerline provider add <id> <key>");
           return process.exit(1);
         }
         // A search key is a local secret, not a gateway connection.
@@ -324,7 +324,7 @@ async function main() {
           // credentials exist, and the keyed providers sit ahead of the keyless
           // ones - so storing the key is the whole job.
           say("It is now used FIRST for searches. No configuration to edit.");
-          say("Check it with:  vireo doctor");
+          say("Check it with:  ledgerline doctor");
           return;
         }
         const r = await providers.addModelProvider(id, key);
@@ -343,7 +343,7 @@ async function main() {
             if (t.remedy) say(`  ${t.remedy}`);
           }
         }
-        say("Run `vireo models` to see what it added.");
+        say("Run `ledgerline models` to see what it added.");
         return;
       }
 
@@ -359,7 +359,7 @@ async function main() {
           say("  Models:      " + cat.models.map((x) => x.id).join(", "));
           say("  Sign-in:     " + cat.signIn.map((x) => x.id).join(", "));
           say("");
-          say("  vireo provider setup <id>");
+          say("  ledgerline provider setup <id>");
           return;
         }
         const st = providers.setupSteps(id);
@@ -376,7 +376,7 @@ async function main() {
       if (sub === "signin") {
         const id = args[1];
         if (!id) {
-          say("Usage: vireo provider signin <id>");
+          say("Usage: ledgerline provider signin <id>");
           return process.exit(1);
         }
         const u = await providers.signInUrl(id);
@@ -393,11 +393,11 @@ async function main() {
         say("");
         const opened = openInBrowser(u.url);
         if (!opened.ok) say(`Could not open a browser automatically (${opened.reason}). Paste the URL above.`);
-        say("When it is done, check with:  vireo provider list");
+        say("When it is done, check with:  ledgerline provider list");
         return;
       }
 
-      say("Usage: vireo provider <list|setup|add|signin> ...");
+      say("Usage: ledgerline provider <list|setup|add|signin> ...");
       return process.exit(1);
     }
 
@@ -412,7 +412,7 @@ async function main() {
       const { gw } = await ensureReady({ quiet: true });
       if (gw.ok === false) {
         say(`The gateway is not running (${gw.reason}), so the dashboard has nothing to serve.`);
-        say("Try `vireo gateway start`.");
+        say("Try `ledgerline gateway start`.");
         return process.exit(1);
       }
       const pw = dashPassword();
@@ -431,7 +431,7 @@ async function main() {
         say("  It is stored on this machine only, and the dashboard is not reachable");
         say("  from any other computer.");
       } else {
-        say("  No dashboard password was found. Run `vireo setup --non-interactive` first.");
+        say("  No dashboard password was found. Run `ledgerline setup --non-interactive` first.");
       }
       say("");
       const opened = openInBrowser(url);
@@ -471,7 +471,7 @@ async function main() {
       say("");
       say(renderTiers({ current: cur.tier, measured }));
       say("");
-      say("  Change it with:  vireo saving <tier>");
+      say("  Change it with:  ledgerline saving <tier>");
       return;
     }
 
@@ -496,7 +496,7 @@ async function main() {
           say("  No key is bundled with this build.");
           say("");
           say("  Add one so whoever you send this to has working models immediately:");
-          say("    vireo bundle-key mistral YOUR-KEY");
+          say("    ledgerline bundle-key mistral YOUR-KEY");
           say("");
           return;
         }
@@ -524,8 +524,8 @@ async function main() {
 
       const [provider, key] = [args[0], args[1]];
       if (!provider || !key) {
-        say("Usage: vireo bundle-key <provider> <key>");
-        say("       vireo bundle-key show | clear");
+        say("Usage: ledgerline bundle-key <provider> <key>");
+        say("       ledgerline bundle-key show | clear");
         return process.exit(1);
       }
       const known = providers.catalogue().models.map((p) => p.id);
@@ -584,7 +584,7 @@ async function main() {
       if (r.alreadyRunning) return process.exit(0);
       say("");
       if (r.ready === false) say("The start hit a problem. The window says what happened and what to do.");
-      say("Vireo is open. Close the window when you are done.");
+      say("Ledgerline is open. Close the window when you are done.");
       say("Leave this running - closing it stops the agent.");
       // Nothing else to do; the HTTP servers hold the process open.
       return;
@@ -603,7 +603,7 @@ async function main() {
       if (sub === "run") {
         const id = args[1];
         if (!id) {
-          say("Usage: vireo routine run <id>");
+          say("Usage: ledgerline routine run <id>");
           return process.exit(1);
         }
         // Scheduled Tasks run this with no app open, so bring up what it needs.
@@ -620,7 +620,7 @@ async function main() {
         stopAgent();
         return process.exit(r.ok ? 0 : 1);
       }
-      say("Usage: vireo routine [list|run <id>]");
+      say("Usage: ledgerline routine [list|run <id>]");
       return process.exit(1);
     }
 
@@ -635,7 +635,7 @@ async function main() {
         if (!r.ok) return process.exit(1);
         if (r.alreadyRunning) return process.exit(0);
         say("");
-        say("Vireo is open on Decisions. Close the window when you are done.");
+        say("Ledgerline is open on Decisions. Close the window when you are done.");
         return;
       }
 
@@ -643,8 +643,8 @@ async function main() {
       // (and only when a model is actually needed).
       const { workspaces, selected } = ws.list();
       if (!selected && sub !== "seed") {
-        say("There is no workspace yet. Run `vireo decisions seed` to load the demo company,");
-        say("or open the app with `vireo decisions` and import your own data.");
+        say("There is no workspace yet. Run `ledgerline decisions seed` to load the demo company,");
+        say("or open the app with `ledgerline decisions` and import your own data.");
         return process.exit(1);
       }
 
@@ -666,7 +666,7 @@ async function main() {
           return process.exit(1);
         }
         say(`Loaded the "${variantName}" demo company: ${r.accounts} customers.`);
-        say("Now run:  vireo decisions run");
+        say("Now run:  ledgerline decisions run");
         return;
       }
 
@@ -738,7 +738,7 @@ async function main() {
         return process.exit(code);
       }
 
-      say("Usage: vireo decisions [open|run|seed|list|eval]");
+      say("Usage: ledgerline decisions [open|run|seed|list|eval]");
       return process.exit(1);
     }
 
@@ -746,7 +746,7 @@ async function main() {
       return start();
 
     default:
-      // `vireo ./some/folder` should just start there.
+      // `ledgerline ./some/folder` should just start there.
       if (!cmd.startsWith("-") && fs.existsSync(cmd)) {
         args.unshift(cmd);
         return start();
@@ -759,7 +759,7 @@ async function main() {
 
 main().catch((err) => {
   say(`\nError: ${err.message}`);
-  if (process.env.VIREO_DEBUG) say(err.stack);
-  say(`\nRun \`vireo doctor\` to diagnose, or \`vireo diagnostics\` to export a report.`);
+  if (process.env.LEDGERLINE_DEBUG) say(err.stack);
+  say(`\nRun \`ledgerline doctor\` to diagnose, or \`ledgerline diagnostics\` to export a report.`);
   process.exit(1);
 });

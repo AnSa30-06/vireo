@@ -17,7 +17,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-process.env.VIREO_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "vireo-upload-test-"));
+process.env.LEDGERLINE_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "ledgerline-upload-test-"));
 
 const workspace = await import("../../src/decisions/workspace.mjs");
 const { decisionRoutes } = await import("../../src/decisions/routes.mjs");

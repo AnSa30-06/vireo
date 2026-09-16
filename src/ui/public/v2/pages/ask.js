@@ -233,7 +233,7 @@ function decisionRecords(ctx, cards) {
 /** decisionsCustomers rows -> a records table. */
 function customerRecords(ctx, customers) {
   return {
-    columns: ["Customer", "ARR", "Vireo's label", "Open decisions", "Renewal"],
+    columns: ["Customer", "ARR", "Ledgerline's label", "Open decisions", "Renewal"],
     total: customers.length,
     note: "",
     rows: customers.map((c) => ({
@@ -275,7 +275,7 @@ function routeRefusal(name, res, checked = []) {
     });
   }
   return refusal({
-    reason: "Vireo could not read the records this question needs, so it is not answering it.",
+    reason: "Ledgerline could not read the records this question needs, so it is not answering it.",
     checked: [`${name} answered: ${res?.error ?? "no reason given"}`, ...checked],
     remedies: [{ label: "Try again", kind: "retry" }],
   });
@@ -298,7 +298,7 @@ function noDataRefusal(what, checked = []) {
 /** No analysis has run, so every label, signal and decision is absent rather than empty. */
 function noRunRefusal(what, checked = []) {
   return refusal({
-    reason: `${what} come from the analysis run, and no analysis has finished in this workspace yet. Vireo will not report zero when the truthful answer is "nobody has looked".`,
+    reason: `${what} come from the analysis run, and no analysis has finished in this workspace yet. Ledgerline will not report zero when the truthful answer is "nobody has looked".`,
     checked,
     remedies: [
       { label: "Run the analysis", kind: "run" },
@@ -307,7 +307,7 @@ function noRunRefusal(what, checked = []) {
   });
 }
 
-/* ── the questions Vireo can actually answer ────────────────────────────── */
+/* ── the questions Ledgerline can actually answer ────────────────────────────── */
 //
 // Each entry names the routes it calls in `routes`, and those names are printed on screen
 // in the evidence block. That is deliberate: the person reading the answer can go and
@@ -525,7 +525,7 @@ const QUESTIONS = [
       if (!row) {
         return refusal({
           reason:
-            "The renewal window is a setting, and Vireo could not read the settings for this workspace. It will not substitute a number of its own.",
+            "The renewal window is a setting, and Ledgerline could not read the settings for this workspace. It will not substitute a number of its own.",
           checked: ["decisionsSettingsGet did not return the renewal_near threshold"],
           remedies: [{ label: "Try again", kind: "retry" }],
         });
@@ -659,8 +659,8 @@ const QUESTIONS = [
         value: count(stale.length),
         unit:
           stale.length === 1
-            ? "customer has data Vireo does not trust"
-            : "customers have data Vireo does not trust",
+            ? "customer has data Ledgerline does not trust"
+            : "customers have data Ledgerline does not trust",
         sentence: stale.length
           ? "Every other answer on this page is weaker for these accounts, because the numbers underneath them stopped arriving."
           : "Every customer has recent enough data for the signals to mean something.",
@@ -976,7 +976,7 @@ function decisionPanel(ctx, ans, isStale) {
     el(
       "p",
       "ak-dim",
-      "Vireo does not create a decision straight from a question. Decisions are written by the analysis run, which checks every account against the rules — so a decision always has evidence behind it rather than a sentence someone typed.",
+      "Ledgerline does not create a decision straight from a question. Decisions are written by the analysis run, which checks every account against the rules — so a decision always has evidence behind it rather than a sentence someone typed.",
     ),
   );
 
@@ -1090,7 +1090,7 @@ function refusalCard(ctx, q, ref, handlers) {
 
   if (ref.checked?.length) {
     const wrap = el("div", "ak-evidence");
-    wrap.append(el("span", "col-head", "What Vireo checked before refusing"));
+    wrap.append(el("span", "col-head", "What Ledgerline checked before refusing"));
     for (const c of ref.checked) wrap.append(el("div", "ak-dim", "· " + c));
     card.append(wrap);
   }
@@ -1130,7 +1130,7 @@ function refusalCard(ctx, q, ref, handlers) {
   // the thing it was built to beat.
   if (ref.suggestions?.length) {
     const wrap = el("div", "ak-evidence");
-    wrap.append(el("span", "col-head", "Questions Vireo can answer"));
+    wrap.append(el("span", "col-head", "Questions Ledgerline can answer"));
     const row = el("div", "ak-row");
     for (const text of ref.suggestions) row.append(button(text, "btn", () => handlers.askText(text)));
     wrap.append(row);
@@ -1174,7 +1174,7 @@ export async function render(root, ctx) {
       styles(),
       emptyPanel(
         "No workspace is open",
-        "Ask reads the same records as the rest of Vireo, so it needs a workspace with customer data in it.",
+        "Ask reads the same records as the rest of Ledgerline, so it needs a workspace with customer data in it.",
         button("Reload", "btn", reload),
       ),
     );
@@ -1210,7 +1210,7 @@ export async function render(root, ctx) {
     el(
       "p",
       "ak-lede",
-      "Every answer here arrives with the records that produced it and the definition it counted by. When Vireo cannot answer, it says so instead of returning a number that looks right.",
+      "Every answer here arrives with the records that produced it and the definition it counted by. When Ledgerline cannot answer, it says so instead of returning a number that looks right.",
     ),
   );
 
@@ -1250,7 +1250,7 @@ export async function render(root, ctx) {
     el(
       "span",
       "ak-dim",
-      "A typed question is matched to one of the questions Vireo can answer from your records. When none of them fits, it says so rather than answering the nearest one.",
+      "A typed question is matched to one of the questions Ledgerline can answer from your records. When none of them fits, it says so rather than answering the nearest one.",
     ),
   );
   composer.append(ta, bar, hint);
@@ -1357,7 +1357,7 @@ export async function render(root, ctx) {
   /* the built-in question list */
   const menu = el("div", "panel ak-menu");
   const menuHead = el("div", "ak-sec-head");
-  menuHead.append(el("h3", null, "Questions Vireo can answer with evidence"));
+  menuHead.append(el("h3", null, "Questions Ledgerline can answer with evidence"));
   menuHead.append(el("span", "ak-note", `${QUESTIONS.length} questions, ${countRoutes()} routes`));
   menu.append(menuHead);
   menu.append(

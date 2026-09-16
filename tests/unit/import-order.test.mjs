@@ -37,12 +37,12 @@ const ROOT = path.resolve(HERE, "..", "..");
 
 /** Import one module as the entry point of its own process. */
 function importsCleanly(relPath) {
-  const home = fs.mkdtempSync(path.join(os.tmpdir(), "vireo-order-"));
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "ledgerline-order-"));
   const url = new URL(`file://${path.resolve(ROOT, relPath).replace(/\\/g, "/")}`).href;
   try {
     execFileSync(process.execPath, ["--input-type=module", "-e", `await import(${JSON.stringify(url)});`], {
       cwd: ROOT,
-      env: { ...process.env, VIREO_HOME: home },
+      env: { ...process.env, LEDGERLINE_HOME: home },
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
       timeout: 60_000,

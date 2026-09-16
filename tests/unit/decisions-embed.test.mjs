@@ -27,7 +27,7 @@ import os from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
-process.env.VIREO_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "vireo-embed-test-"));
+process.env.LEDGERLINE_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "ledgerline-embed-test-"));
 
 const { openMemory, MIGRATIONS, open } = await import("../../src/decisions/db.mjs");
 const E = await import("../../src/decisions/embed.mjs");
@@ -392,7 +392,7 @@ test("a scope can allow only some questions, and the refusal carries none of the
   assert.ok(!text.includes("Northwind"));
   assert.deepEqual(refused.result.suggestions, ["Which renewals are coming up?"], "it says what it CAN answer instead");
 
-  assert.match(E.createScope(db, { name: "x", intents: ["not_an_intent"] }).error, /is not a question Vireo can answer/);
+  assert.match(E.createScope(db, { name: "x", intents: ["not_an_intent"] }).error, /is not a question Ledgerline can answer/);
   db.close();
 });
 
@@ -687,7 +687,7 @@ test("the page and the widget load nothing from the internet, and the widget has
   const markup = widgetSource.replace(/<!--[\s\S]*?-->/g, "");
   const inline = markup.match(/<script(?![^>]*\bsrc=)[^>]*>/i);
   assert.equal(inline, null, "the widget must load its behaviour from a file, never inline");
-  assert.match(widgetSource, /data-vireo-embed-widget="1"/, "the widget half of embed.js boots off this attribute");
+  assert.match(widgetSource, /data-ledgerline-embed-widget="1"/, "the widget half of embed.js boots off this attribute");
   assert.match(widgetSource, /<script type="module" src="\.\/pages\/embed\.js">/);
 });
 

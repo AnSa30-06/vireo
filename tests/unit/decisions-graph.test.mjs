@@ -26,7 +26,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-process.env.VIREO_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "vireo-graph-test-"));
+process.env.LEDGERLINE_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "ledgerline-graph-test-"));
 
 const { pkg } = await import("../../src/util/paths.mjs");
 const { openMemory, setMeta, setSettings } = await import("../../src/decisions/db.mjs");

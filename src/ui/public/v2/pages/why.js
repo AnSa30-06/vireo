@@ -352,7 +352,7 @@ export async function render(root, ctx) {
 
   /* 1 — what this does, in one sentence */
   const hero = el("header", "wy-hero");
-  hero.append(el("h1", "wy-h1", "Vireo tells you which of your customers need you this week, and why."));
+  hero.append(el("h1", "wy-h1", "Ledgerline tells you which of your customers need you this week, and why."));
   hero.append(
     el(
       "p",

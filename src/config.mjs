@@ -138,7 +138,7 @@ export function updateConfig(mutator) {
 
 /** The base URL every client in this repo should talk to. */
 export function gatewayBaseUrl(cfg = loadConfig()) {
-  if (process.env.VIREO_GATEWAY_URL) return process.env.VIREO_GATEWAY_URL.replace(/\/$/, "");
+  if (process.env.LEDGERLINE_GATEWAY_URL) return process.env.LEDGERLINE_GATEWAY_URL.replace(/\/$/, "");
   if (cfg.gateway.externalBaseUrl) return cfg.gateway.externalBaseUrl.replace(/\/$/, "");
   return `http://127.0.0.1:${cfg.gateway.port}`;
 }

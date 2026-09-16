@@ -5,7 +5,7 @@
 On your computer, in one file per workspace:
 
 ```
-%LOCALAPPDATA%\Vireo\decisions\<workspace>\decisions.sqlite
+%LOCALAPPDATA%\Ledgerline\decisions\<workspace>\decisions.sqlite
 ```
 
 Beside it, in `imports/`, is a copy of every spreadsheet you imported and the
@@ -58,7 +58,7 @@ One fact sheet is sent per situation, up to ten per run by default.
 
 ## Who receives it
 
-Whichever AI model Vireo is configured to use. By default that is a free
+Whichever AI model Ledgerline is configured to use. By default that is a free
 model served through the bundled gateway, which means **a third-party company you
 have not signed an agreement with**.
 
@@ -67,15 +67,15 @@ That is why names are hidden by default.
 If that is not acceptable for your data, you have three options:
 
 1. **Add your own provider key** (Anthropic, OpenAI, Google, Mistral, DeepSeek)
-   in Vireo's **Free capacity** page. Then the fact sheet goes to that
+   in Ledgerline's **Free capacity** page. Then the fact sheet goes to that
    provider under your own agreement with them.
 2. **Run the analysis with no AI at all.** From a terminal:
    ```bash
-   vireo decisions run --no-model
+   ledgerline decisions run --no-model
    ```
    Every decision is still raised, with its evidence and its money figure. Only
    the written explanation is missing. Nothing leaves your computer.
-3. Point Vireo at a locally-hosted model. Anything the gateway can reach
+3. Point Ledgerline at a locally-hosted model. Anything the gateway can reach
    works.
 
 ---
@@ -102,7 +102,7 @@ name, never the text of an AI answer.
 The record of AI calls kept in the database stores the model name, token counts,
 timing, and a hash — not the prompt and not the answer.
 
-Vireo's own logging strips anything that looks like a secret before writing
+Ledgerline's own logging strips anything that looks like a secret before writing
 it. See [security.md](../security.md).
 
 ---

@@ -1,4 +1,4 @@
-// The Vireo tool layer, exposed to OpenCode.
+// The Ledgerline tool layer, exposed to OpenCode.
 //
 // TOOL COUNT IS A BUDGET, NOT A FEATURE LIST. OpenCode's own docs warn that
 // every tool description is spent from the model's context on every single
@@ -33,8 +33,8 @@ function clip(text, max, label = "content") {
   return s.slice(0, max) + `\n\n[...truncated: ${s.length - max} more characters of ${label}. Narrow the request if you need the rest.]`;
 }
 
-export const VireoPlugin = async () => {
-  log.info("vireo plugin loaded");
+export const LedgerlinePlugin = async () => {
+  log.info("ledgerline plugin loaded");
 
   return {
     tool: {
@@ -494,4 +494,4 @@ export const VireoPlugin = async () => {
   };
 };
 
-export default VireoPlugin;
+export default LedgerlinePlugin;

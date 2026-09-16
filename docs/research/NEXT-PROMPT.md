@@ -5,7 +5,7 @@ session that produced it.
 
 ---
 
-Work in `D:\to-drive\complisutra desktop\vireo-build` (a git worktree on branch
+Work in `D:\to-drive\complisutra desktop\ledgerline-build` (a git worktree on branch
 `decisions-mvp`). Do not stop until the Definition of done is met.
 
 **Read these three files FIRST. They are the specification and they outrank your own judgement
@@ -19,7 +19,7 @@ about what to build:**
 
 ## What is already done — do not redo it
 
-- **Vireo is self-contained.** The OmniAgent component-sharing was deleted.
+- **Ledgerline is self-contained.** The OmniAgent component-sharing was deleted.
   `tests/unit/self-contained.test.mjs` fails if it comes back. The two apps must never interact.
 - **The decisions engine has one clock** (`nowIso(db)` in `src/decisions/db.mjs`). Every
   timestamp goes through it. `tests/unit/decisions-clock.test.mjs` pins it.
@@ -53,8 +53,8 @@ about what to build:**
 
 - **`AnSa30-06/omni-agent` main must stay untouched, and PR #1 there must stay OPEN and UNMERGED.**
   Push omni-agent work to its own branch only.
-- **Vireo's repo is PUBLIC.** No API key may ever enter git. A provider key travels only inside a
-  build artifact, via `node bin/vireo.mjs bundle-key mistral <key>`. `npm run scan:secrets` must
+- **Ledgerline's repo is PUBLIC.** No API key may ever enter git. A provider key travels only inside a
+  build artifact, via `node bin/ledgerline.mjs bundle-key mistral <key>`. `npm run scan:secrets` must
   pass before every push.
 - **Never re-introduce component sharing with OmniAgent.** Re-downloading 45 GB is acceptable;
   reading another program's install is not.

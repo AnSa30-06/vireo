@@ -1,15 +1,15 @@
 {
-  "name": "vireo",
-  "version": "1.3.1",
+  "name": "ledgerline",
+  "version": "1.3.2",
   "private": false,
-  "description": "A downloadable, model-agnostic coding agent: OpenCode as the harness, OmniRoute as the model gateway, with browser automation, web research, scraping and document tools preconfigured.",
+  "description": "A downloadable decision system: it reads spreadsheets about your customers, computes what changed in code, and tells you which accounts need attention this week - with the evidence behind every number.",
   "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=22.12.0"
   },
   "bin": {
-    "vireo": "bin/vireo.mjs"
+    "ledgerline": "bin/ledgerline.mjs"
   },
   "main": "src/index.mjs",
   "files": [
@@ -24,10 +24,10 @@
     "src/"
   ],
   "scripts": {
-    "start": "node bin/vireo.mjs",
-    "setup": "node bin/vireo.mjs setup",
-    "doctor": "node bin/vireo.mjs doctor",
-    "usage": "node bin/vireo.mjs usage",
+    "start": "node bin/ledgerline.mjs",
+    "setup": "node bin/ledgerline.mjs setup",
+    "doctor": "node bin/ledgerline.mjs doctor",
+    "usage": "node bin/ledgerline.mjs usage",
     "test": "node --test tests/unit/*.test.mjs",
     "test:unit": "node --test tests/unit/*.test.mjs",
     "test:integration": "node --test tests/integration/*.test.mjs",

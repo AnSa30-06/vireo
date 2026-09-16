@@ -1,4 +1,4 @@
-# Vireo — the manual
+# Ledgerline — the manual
 
 Everything you need, in one page. No jargon. If you only read one section, read
 **[Your first five minutes](#your-first-five-minutes)**.
@@ -7,7 +7,7 @@ Everything you need, in one page. No jargon. If you only read one section, read
 
 ## Contents
 
-1. [What Vireo is](#what-vireo-is)
+1. [What Ledgerline is](#what-ledgerline-is)
 2. [Install it](#install-it)
 3. [Your first five minutes](#your-first-five-minutes)
 4. [Part one: the assistant](#part-one-the-assistant)
@@ -19,7 +19,7 @@ Everything you need, in one page. No jargon. If you only read one section, read
 
 ---
 
-## What Vireo is
+## What Ledgerline is
 
 Two things in one window.
 
@@ -41,10 +41,10 @@ Everything runs on your own computer.
 
 ### 1. Download
 
-**[⬇ VireoSetup-1.3.1.exe](https://github.com/AnSa30-06/vireo/releases/download/v1.3.1/VireoSetup-1.3.1.exe)** — 71 MB, from the
+**[⬇ LedgerlineSetup-1.3.1.exe](https://github.com/AnSa30-06/vireo/releases/download/v1.3.1/LedgerlineSetup-1.3.1.exe)** — 71 MB, from the
 [releases page](https://github.com/AnSa30-06/vireo/releases).
 
-To check you got the right file, run `Get-FileHash .\VireoSetup-1.3.1.exe -Algorithm SHA256`
+To check you got the right file, run `Get-FileHash .\LedgerlineSetup-1.3.1.exe -Algorithm SHA256`
 in PowerShell. It should print
 `FE2958A3BF62DB8F16FA3278E75362406E8516C9825E9579D92DC25FA69A987C`.
 
@@ -67,12 +67,12 @@ No administrator password is needed. It installs just for you.
 When the installer finishes it opens a setup window. **This part takes ten to
 thirty minutes and downloads about 4 GB.** It only ever happens once.
 
-> **Already have OmniAgent installed?** It makes no difference. Vireo downloads
+> **Already have OmniAgent installed?** It makes no difference. Ledgerline downloads
 > its own copy of everything and never reads another program's install.
 >
 > Earlier versions did share those files to skip the download. That was removed,
 > because both programs start a model gateway on the same port and the sharing
-> made Vireo's behaviour depend on whether OmniAgent happened to be running.
+> made Ledgerline's behaviour depend on whether OmniAgent happened to be running.
 >
 > **Do not run both at the same time.** They each want port 20129 for their own
 > gateway. Close one before you open the other.
@@ -95,7 +95,7 @@ Leave it running. Make a cup of tea.
 
 ## Your first five minutes
 
-Open **Vireo** from your Desktop or Start Menu.
+Open **Ledgerline** from your Desktop or Start Menu.
 
 ### Try the assistant
 
@@ -272,7 +272,7 @@ find out in three months whether any of this worked.
 
 ## Making it faster
 
-Vireo works with no account at all, but only a handful of free models still
+Ledgerline works with no account at all, but only a handful of free models still
 answer and they are slow. A run that takes a minute can take five seconds.
 
 **One free key fixes this.** Click **Free capacity** in the sidebar, pick a
@@ -283,7 +283,7 @@ If someone gave you this app with a key already inside it, models work
 immediately and you can skip this.
 
 Already paying for Claude, ChatGPT, Copilot, Cursor or Gemini? Sign in on the
-same page and Vireo uses that. Nothing is charged twice.
+same page and Ledgerline uses that. Nothing is charged twice.
 
 ---
 
@@ -307,11 +307,11 @@ their job title, not their name.
 looks like.
 
 **To use Decisions with no AI at all**, open a terminal and run
-`vireo decisions run --no-model`. Every decision is still found. Only the written
+`ledgerline decisions run --no-model`. Every decision is still found. Only the written
 explanation is missing.
 
-**To delete everything**, uninstall Vireo and delete the folder
-`%LOCALAPPDATA%\Vireo`.
+**To delete everything**, uninstall Ledgerline and delete the folder
+`%LOCALAPPDATA%\Ledgerline`.
 
 ---
 
@@ -323,7 +323,7 @@ explanation is missing.
 **Setup is taking forever** — it downloads about 4 GB on first run. Ten to thirty
 minutes is normal. It only happens once.
 
-**The window does not open** — Vireo falls back to your normal browser and tells
+**The window does not open** — Ledgerline falls back to your normal browser and tells
 you why. The usual cause is a missing **Microsoft Visual C++ Redistributable
 (x64)**. Installing that fixes it.
 
@@ -342,7 +342,7 @@ freezes the date so you can move it forward. Settings > Demo mode.
 **Check everything at once:**
 
 ```bash
-vireo doctor
+ledgerline doctor
 ```
 
 That runs real checks, not guesses. It tries an actual model request, an actual
@@ -356,14 +356,14 @@ one failed.
 ### Useful commands
 
 ```bash
-vireo                      Start the assistant in a terminal
-vireo ui                   Open the app window
-vireo decisions            Open Decisions
-vireo decisions seed demo  Load the demo company
-vireo decisions run        Analyse now, without opening a window
-vireo doctor               Check everything works
-vireo usage                What model you are on and what it is costing
-vireo provider             Free providers you can add
+ledgerline                      Start the assistant in a terminal
+ledgerline ui                   Open the app window
+ledgerline decisions            Open Decisions
+ledgerline decisions seed demo  Load the demo company
+ledgerline decisions run        Analyse now, without opening a window
+ledgerline doctor               Check everything works
+ledgerline usage                What model you are on and what it is costing
+ledgerline provider             Free providers you can add
 ```
 
 ### Deeper reading

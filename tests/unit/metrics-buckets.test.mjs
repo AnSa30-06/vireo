@@ -23,7 +23,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-process.env.VIREO_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "vireo-buckets-"));
+process.env.LEDGERLINE_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "ledgerline-buckets-"));
 
 const { openMemory, setSettings, setMeta } = await import("../../src/decisions/db.mjs");
 const M = await import("../../src/decisions/metrics.mjs");

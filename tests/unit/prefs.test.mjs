@@ -10,7 +10,7 @@ import os from "node:os";
 import path from "node:path";
 
 const home = fs.mkdtempSync(path.join(os.tmpdir(), "omni-prefs-"));
-process.env.VIREO_HOME = home;
+process.env.LEDGERLINE_HOME = home;
 const { readPrefs, writePrefs, rememberVerifiedModel, prefsFile } = await import("../../src/ui/prefs.mjs");
 
 test("preferences survive a round trip, and a missing file is not an error", () => {

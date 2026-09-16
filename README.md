@@ -1,4 +1,4 @@
-# Vireo
+# Ledgerline
 
 ## What is this?
 
@@ -19,12 +19,12 @@ customers and tells you which ones need your attention this week, why, and what 
 
 # ⬇ Download
 
-### **[VireoSetup-1.3.1.exe](https://github.com/AnSa30-06/vireo/releases/download/v1.3.1/VireoSetup-1.3.1.exe)** — 71 MB
+### **[LedgerlineSetup-1.3.1.exe](https://github.com/AnSa30-06/vireo/releases/download/v1.3.1/LedgerlineSetup-1.3.1.exe)** — 71 MB
 
 One file. No account. No API key.
 Windows 10 or 11, 64-bit. No administrator password needed.
 
-Prefer no installer? **[Vireo-Portable-1.3.1.zip](https://github.com/AnSa30-06/vireo/releases/download/v1.3.1/Vireo-Portable-1.3.1.zip)** — 117 MB. Extract it anywhere, run `setup.bat` once, then `app.bat`.
+Prefer no installer? **[Ledgerline-Portable-1.3.1.zip](https://github.com/AnSa30-06/vireo/releases/download/v1.3.1/Ledgerline-Portable-1.3.1.zip)** — 117 MB. Extract it anywhere, run `setup.bat` once, then `app.bat`.
 
 ### 📖 **[Read the manual](MANUAL.md)**
 
@@ -40,7 +40,7 @@ Everything in one page, in plain English. Start there.
 
 ## Where this came from
 
-Vireo is a fork of [omni-agent](https://github.com/AnSa30-06/omni-agent), the same
+Ledgerline is a fork of [omni-agent](https://github.com/AnSa30-06/omni-agent), the same
 codebase under its previous name. That project's releases are still there and
 still work; this one adds **Decisions** and is where new work happens.
 
@@ -52,7 +52,7 @@ version and its release notes.
 Run this in PowerShell in your Downloads folder before opening it:
 
 ```powershell
-Get-FileHash .\VireoSetup-1.3.1.exe -Algorithm SHA256
+Get-FileHash .\LedgerlineSetup-1.3.1.exe -Algorithm SHA256
 ```
 
 It should print:
@@ -91,7 +91,7 @@ To check the file is exactly the one that was published, see
 1. **Run the file you downloaded.** No administrator password needed.
 2. When it finishes, it opens a setup window that downloads the rest and checks everything
    works. This takes a while and needs about 4 GB — see [Disk and download](#disk-and-download).
-3. **Launch** *Vireo* from your Desktop or Start Menu — `Vireo.exe`, a real
+3. **Launch** *Ledgerline* from your Desktop or Start Menu — `Ledgerline.exe`, a real
    application, not a terminal. It opens as a window: Chat on one side, Code on the
    other, with everything else a click away in the sidebar.
    See [The desktop app](docs/desktop-app.md).
@@ -163,7 +163,7 @@ rather than bundled, because an installer carrying them would be unusable.
 
 ## Usage and cost
 
-Run `vireo usage`, or just ask the agent "what model am I on and what is this
+Run `ledgerline usage`, or just ask the agent "what model am I on and what is this
 costing?".
 
 **The numbers you see are real or they are absent.** This product never estimates a quota
@@ -190,7 +190,7 @@ Free tiers have limits, and most of what an agent spends is tool output — test
 runs, file reads, search results — not conversation.
 
 ```bash
-vireo saving
+ledgerline saving
 ```
 
 That lists every tier with the saving **measured on your own recent requests**,
@@ -211,7 +211,7 @@ sent exactly as written. Code, URLs and structured data are never compressed at
 any tier.
 
 ```bash
-vireo saving max
+ledgerline saving max
 ```
 
 > The seven underlying modes are not one dial — some target prose and some
@@ -224,21 +224,21 @@ vireo saving max
 ## More free capacity
 
 ```bash
-vireo provider
+ledgerline provider
 ```
 
 Fifteen providers with a genuine free tier, what each one gives you, and where
 to get the key. Add one and it is tested immediately with a real call:
 
 ```bash
-vireo provider add cerebras csk-...
+ledgerline provider add cerebras csk-...
 ```
 
 Already paying for Claude, ChatGPT, Copilot, Cursor or Gemini? Sign in and the
 agent uses that subscription — nothing is charged twice:
 
 ```bash
-vireo provider signin claude
+ledgerline provider signin claude
 ```
 
 ### Anything else the gateway knows
@@ -248,8 +248,8 @@ them can be added by id — `mistral`, `cerebras`, `groq`, `cohere`, `together`,
 `sambanova`, `nebius`, `novita`, `deepinfra`, `hyperbolic`, `openrouter`:
 
 ```bash
-vireo provider setup mistral      # the steps
-vireo provider add mistral YOUR-KEY
+ledgerline provider setup mistral      # the steps
+ledgerline provider add mistral YOUR-KEY
 ```
 
 Its models then appear in the picker under **From your keys**. A full worked
@@ -275,7 +275,7 @@ research looks like. A key removes that.
 Every provider comes with step-by-step instructions:
 
 ```bash
-vireo provider setup brave
+ledgerline provider setup brave
 ```
 
 ```
@@ -285,9 +285,9 @@ Brave Search - Free credits every month on an independent web index
   2. Create a Brave account, or sign in.
   3. $5 of free credit every month, applied automatically.
   4. In the developer dashboard, create a subscription token.
-  5. Run:  vireo provider add brave YOUR-KEY
+  5. Run:  ledgerline provider add brave YOUR-KEY
 
-  Check it worked:  vireo doctor
+  Check it worked:  ledgerline doctor
 ```
 
 Once a key is stored it is used **first**, automatically — nothing to
@@ -302,9 +302,9 @@ The bundled gateway is a full web application running on your own machine —
 providers, compression, analytics, search tools, settings.
 
 ```bash
-vireo dashboard          # overview
-vireo dashboard search   # search and scraping providers
-vireo dashboard free     # every provider with a free allowance
+ledgerline dashboard          # overview
+ledgerline dashboard search   # search and scraping providers
+ledgerline dashboard free     # every provider with a free allowance
 ```
 
 It asks for a password, which setup generated for you. The command prints it and
@@ -326,14 +326,14 @@ The agent routes automatically. Five modes:
 | `cheap` | The cheapest model that can still do the job |
 
 ```bash
-vireo config mode smart
+ledgerline config mode smart
 ```
 
 The mode picks the agent's own model as well as the models it uses internally, so changing
 it prints which model you will be on and asks you to restart — OpenCode reads its
 configuration at launch and does not reload it.
 
-Or ask it: *"switch to the cheapest model"*. To pin one specific model, `vireo models`
+Or ask it: *"switch to the cheapest model"*. To pin one specific model, `ledgerline models`
 lists what is available right now, and the agent's `agent_status` tool can pin it.
 
 Simple work (classifying, naming, extracting a field) is deliberately sent to a cheap fast
@@ -345,25 +345,25 @@ to waste a budget.
 ## Commands
 
 ```bash
-vireo ui              # open the desktop app (same as Vireo.exe)
-vireo ui --no-window  # ...and use your own browser instead
-vireo decisions       # open Decisions: customer data -> decisions
-vireo decisions seed demo    # load a demo company to try it on
-vireo decisions run          # run the analysis without opening a window
-vireo                 # start the agent in the terminal instead
-vireo routine list    # scheduled routines
-vireo routine run ID  # run one now
-vireo dashboard       # open the gateway's own web dashboard
-vireo dashboard search   # ...straight to the search-tools page
-vireo saving          # what each token-saving tier really saves
-vireo provider        # free providers you can add, and what each gives
-vireo doctor          # check everything works, with real probes
-vireo usage           # model, quota and token usage
-vireo models          # what the gateway currently serves
-vireo route           # which model each kind of task would get
-vireo setup           # re-run the setup wizard
-vireo gateway status  # is the model gateway running
-vireo diagnostics     # export a sanitised report for bug reports
+ledgerline ui              # open the desktop app (same as Ledgerline.exe)
+ledgerline ui --no-window  # ...and use your own browser instead
+ledgerline decisions       # open Decisions: customer data -> decisions
+ledgerline decisions seed demo    # load a demo company to try it on
+ledgerline decisions run          # run the analysis without opening a window
+ledgerline                 # start the agent in the terminal instead
+ledgerline routine list    # scheduled routines
+ledgerline routine run ID  # run one now
+ledgerline dashboard       # open the gateway's own web dashboard
+ledgerline dashboard search   # ...straight to the search-tools page
+ledgerline saving          # what each token-saving tier really saves
+ledgerline provider        # free providers you can add, and what each gives
+ledgerline doctor          # check everything works, with real probes
+ledgerline usage           # model, quota and token usage
+ledgerline models          # what the gateway currently serves
+ledgerline route           # which model each kind of task would get
+ledgerline setup           # re-run the setup wizard
+ledgerline gateway status  # is the model gateway running
+ledgerline diagnostics     # export a sanitised report for bug reports
 ```
 
 ---
@@ -373,13 +373,13 @@ vireo diagnostics     # export a sanitised report for bug reports
 ```
                     You
                      |
-              vireo  (launcher, setup, health, usage)
+              ledgerline  (launcher, setup, health, usage)
                      |
                  OpenCode  (the agent harness and TUI)
                      |
         +------------+--------------------------+
         |                                       |
-  Built-in tools                     Vireo plugin
+  Built-in tools                     Ledgerline plugin
   files, shell, git                  8 high-level tools
                                        |
         +----------+----------+--------+---------+----------+
@@ -425,9 +425,9 @@ Then it remembers. A decision stays until you close it, tells you when it is
 overdue, and asks what actually happened.
 
 ```bash
-vireo decisions              # open it
-vireo decisions seed demo    # 48 made-up customers to try it on
-vireo decisions run          # analyse, from a terminal
+ledgerline decisions              # open it
+ledgerline decisions seed demo    # 48 made-up customers to try it on
+ledgerline decisions run          # analyse, from a terminal
 ```
 
 Two rules it does not break:
@@ -487,7 +487,7 @@ Details in [docs/security.md](docs/security.md).
 - ~6 GB free disk
 - An internet connection for setup
 
-macOS and Linux work from source (`npm install && node bin/vireo.mjs setup`); only the
+macOS and Linux work from source (`npm install && node bin/ledgerline.mjs setup`); only the
 Windows installer is built today.
 
 ---

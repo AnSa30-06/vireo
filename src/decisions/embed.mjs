@@ -1,6 +1,6 @@
 // The embeddable widget: keys, data scopes, and the one route the widget calls.
 //
-// WHAT THIS IS. A page outside Vireo can drop in an <iframe> that answers
+// WHAT THIS IS. A page outside Ledgerline can drop in an <iframe> that answers
 // questions about the workspace. The iframe carries an EMBED KEY. The key -
 // never the URL - decides what that widget is allowed to see.
 //
@@ -215,7 +215,7 @@ function checkIntents(intents) {
   const out = [];
   for (const raw of intents) {
     const v = String(raw ?? "");
-    if (!catalogueIds().has(v)) return bad(`"${v.slice(0, 40)}" is not a question Vireo can answer`);
+    if (!catalogueIds().has(v)) return bad(`"${v.slice(0, 40)}" is not a question Ledgerline can answer`);
     if (!out.includes(v)) out.push(v);
   }
   return ok({ intents: out });
@@ -420,7 +420,7 @@ export function deleteScope(db, scopeId, { revokeKeys = false } = {}) {
     const names = live.map((k) => `${k.name} (${k.prefix}…)`).join(", ");
     return bad(
       `${live.length} embed ${live.length === 1 ? "key still uses" : "keys still use"} "${existing.name}": ${names}. ` +
-        "Deleting the scope on its own would leave them pointing at a scope that is gone, so Vireo refuses. " +
+        "Deleting the scope on its own would leave them pointing at a scope that is gone, so Ledgerline refuses. " +
         "Revoke them along with it, or move them to another scope first.",
       { keys: live, needsRevoke: true },
     );
@@ -464,7 +464,7 @@ const hashKey = (full) => crypto.createHash("sha256").update(String(full), "utf8
 
 /**
  * A new secret. 32 random bytes, base64url, behind a fixed prefix so a leaked
- * string is recognisable as a Vireo embed key in a log or a repository scan.
+ * string is recognisable as a Ledgerline embed key in a log or a repository scan.
  */
 function mintKey() {
   const full = `vek_${crypto.randomBytes(32).toString("base64url")}`;
@@ -488,9 +488,9 @@ function normaliseOrigins(raw) {
     try {
       origin = new URL(text).origin;
     } catch {
-      return bad(`"${text.slice(0, 60)}" is not a web address Vireo can read as an origin`);
+      return bad(`"${text.slice(0, 60)}" is not a web address Ledgerline can read as an origin`);
     }
-    if (origin === "null") return bad(`"${text.slice(0, 60)}" has no origin Vireo can match against`);
+    if (origin === "null") return bad(`"${text.slice(0, 60)}" has no origin Ledgerline can match against`);
     if (!out.includes(origin)) out.push(origin);
   }
   return ok({ origins: out });

@@ -359,7 +359,7 @@ function buildClock(ctx, st, put, repaint) {
       el(
         "span",
         null,
-        `Vireo is treating ${st.asOf} as today. The real date is ${today}. Every due date, age and "days ago" on every screen is counted from the pinned date — nothing is broken.`,
+        `Ledgerline is treating ${st.asOf} as today. The real date is ${today}. Every due date, age and "days ago" on every screen is counted from the pinned date — nothing is broken.`,
       ),
     );
     p.append(warn);

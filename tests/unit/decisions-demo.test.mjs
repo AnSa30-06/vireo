@@ -20,7 +20,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-process.env.VIREO_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "omni-demo-test-"));
+process.env.LEDGERLINE_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "omni-demo-test-"));
 
 const { openMemory, setSettings, setMeta } = await import("../../src/decisions/db.mjs");
 const { generate, writeDataset, variant, seedHistory, VARIANTS } = await import("../../src/decisions/synthetic.mjs");
@@ -36,7 +36,7 @@ const AS_OF = "2026-09-09";
 const DROP = rules().signals.usage_drop_30d.bands; // [-25, -40, -60]
 const RISE = rules().signals.usage_rise_30d.bands[0]; // 30
 
-const tmpdir = () => fs.mkdtempSync(path.join(process.env.VIREO_HOME, "ds-"));
+const tmpdir = () => fs.mkdtempSync(path.join(process.env.LEDGERLINE_HOME, "ds-"));
 
 /** The demo dataset, built once: generating it twice costs a second for nothing. */
 let _demo = null;

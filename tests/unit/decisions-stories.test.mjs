@@ -21,7 +21,7 @@ import os from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
-process.env.VIREO_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "vireo-stories-test-"));
+process.env.LEDGERLINE_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "ledgerline-stories-test-"));
 
 const { openMemory, MIGRATIONS, setMeta, setSettings } = await import("../../src/decisions/db.mjs");
 const { pkg, PATHS } = await import("../../src/util/paths.mjs");
@@ -577,7 +577,7 @@ test("exportRun writes a real file, named after the story and the period", () =>
   const r = ST.exportRun(db, run);
   assert.equal(r.ok, true);
   assert.ok(fs.existsSync(r.file), `expected a file at ${r.file}`);
-  assert.equal(path.dirname(r.file), path.join(PATHS.downloads, "vireo-stories"));
+  assert.equal(path.dirname(r.file), path.join(PATHS.downloads, "ledgerline-stories"));
   assert.match(path.basename(r.file), /^weekly-review-2026-09-15-srn_[0-9a-f]+\.html$/);
   const onDisk = fs.readFileSync(r.file, "utf8");
   // Bytes, not characters: the report is full of em dashes and currency signs.
@@ -591,7 +591,7 @@ test("a story name that is a path does not become a path", () => {
   const run = ST.runStory(db, made.story.id).run.id;
   const r = ST.exportRun(db, run);
   assert.equal(r.ok, true);
-  assert.equal(path.dirname(r.file), path.join(PATHS.downloads, "vireo-stories"), "the file must stay in its folder");
+  assert.equal(path.dirname(r.file), path.join(PATHS.downloads, "ledgerline-stories"), "the file must stay in its folder");
   assert.match(path.basename(r.file), /^etc-passwd-/);
 });
 

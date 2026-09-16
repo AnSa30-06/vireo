@@ -1,10 +1,10 @@
 // The interface that ships must be the interface you can reach.
 //
-// 🔴 THIS SHIPPED, AND A USER FOUND IT, NOT A TEST. Vireo 1.3.0 contained the
+// 🔴 THIS SHIPPED, AND A USER FOUND IT, NOT A TEST. Ledgerline 1.3.0 contained the
 // whole rebuilt Decisions interface under src/ui/public/v2/ - ten screens, 455
 // passing tests, verified in a browser. Nothing linked to it. The Decisions
 // button in the chat app sent people to "/decisions/", the interface it
-// replaced, and `vireo decisions` opened the same old screens. Anmol installed
+// replaced, and `ledgerline decisions` opened the same old screens. Anmol installed
 // it on a friend's laptop and saw the old UI.
 //
 // ⭐ EVERY EXISTING TEST PASSED. tests/unit/v2-ui.test.mjs checked that the v2
@@ -19,7 +19,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-process.env.VIREO_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "vireo-reach-"));
+process.env.LEDGERLINE_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "ledgerline-reach-"));
 
 const { pkg } = await import("../../src/util/paths.mjs");
 
@@ -37,11 +37,11 @@ test("the chat app's Decisions button opens the interface that ships", () => {
   );
 });
 
-test("`vireo decisions` opens the interface that ships", () => {
+test("`ledgerline decisions` opens the interface that ships", () => {
   const js = read("src", "ui", "launch.mjs");
   const line = js.split("\n").find((l) => l.includes('opts.page === "decisions"'));
   assert.ok(line, "launch.mjs must still route the decisions page");
-  assert.match(line, /"\/v2\/"/, "`vireo decisions` must open /v2/");
+  assert.match(line, /"\/v2\/"/, "`ledgerline decisions` must open /v2/");
 });
 
 test("everything the v2 shell lists has a page file behind it", () => {

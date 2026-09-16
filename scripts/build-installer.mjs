@@ -1,11 +1,11 @@
-// Build VireoSetup-<version>.exe.
+// Build LedgerlineSetup-<version>.exe.
 //
 // Stages a private Node.js runtime plus this application (source and its own
 // node_modules) into installer/../staging, then invokes Inno Setup.
 //
 // What is bundled and what is not, and why - measured installed sizes:
 //   bundled     Node.js runtime          ~80 MB   nothing preinstalled required
-//   bundled     vireo + deps        ~180 MB  offline-installable, no npm flakiness
+//   bundled     ledgerline + deps        ~180 MB  offline-installable, no npm flakiness
 //   downloaded  omniroute                2.7 GB   far too large to ship
 //   downloaded  opencode-ai              514 MB   too large to ship
 //   downloaded  Chromium                 701 MB   too large to ship
@@ -21,14 +21,14 @@ import { APP_ROOT } from "../src/util/paths.mjs";
 const say = (s = "") => process.stdout.write(s + "\n");
 
 // Pinned to the runtime everything in this repo was actually verified against.
-const NODE_VERSION = process.env.VIREO_NODE_VERSION || "v24.18.0";
+const NODE_VERSION = process.env.LEDGERLINE_NODE_VERSION || "v24.18.0";
 const ARCH = "x64";
 const NODE_DIR_NAME = `node-${NODE_VERSION}-win-${ARCH}`;
 const NODE_ZIP = `${NODE_DIR_NAME}.zip`;
 const NODE_URL = `https://nodejs.org/dist/${NODE_VERSION}/${NODE_ZIP}`;
 const SHASUMS_URL = `https://nodejs.org/dist/${NODE_VERSION}/SHASUMS256.txt`;
 
-const CACHE = path.join(os.tmpdir(), "vireo-build-cache");
+const CACHE = path.join(os.tmpdir(), "ledgerline-build-cache");
 const STAGING = path.join(APP_ROOT, "staging");
 const DIST = path.join(APP_ROOT, "dist");
 
@@ -179,7 +179,7 @@ function verifyStagedApp(appStage) {
     ["node_modules/exceljs/excel.js", "spreadsheets"],
     ["node_modules/exceljs/lib", "spreadsheets"],
     ["node_modules/@opencode-ai/plugin/dist/tool.js", "the plugin contract"],
-    ["bin/vireo.mjs", "the launcher"],
+    ["bin/ledgerline.mjs", "the launcher"],
     ["plugin/index.mjs", "the tool layer"],
     // The plugin cannot drive Chromium itself; it forwards to this, run under
     // the bundled Node. Without it the browser is dead in the shipped product
@@ -259,7 +259,7 @@ function dirSizeMB(dir) {
 
 async function main() {
   say("");
-  say(`Building Vireo installer ${VERSION}`);
+  say(`Building Ledgerline installer ${VERSION}`);
   say("");
 
   const compiler = iscc();
@@ -294,11 +294,11 @@ async function main() {
   // The application executable. Built after staging because it is made from
   // the staged node.exe, and copied in afterwards because staging is wiped.
   say("");
-  say("Building Vireo.exe:");
+  say("Building Ledgerline.exe:");
   const { buildExe } = await import("./build-exe.mjs");
   const exe = await buildExe({ version: VERSION });
-  if (!exe.ok) throw new Error(`could not build Vireo.exe: ${exe.reason}`);
-  fs.copyFileSync(exe.path, path.join(STAGING, "Vireo.exe"));
+  if (!exe.ok) throw new Error(`could not build Ledgerline.exe: ${exe.reason}`);
+  fs.copyFileSync(exe.path, path.join(STAGING, "Ledgerline.exe"));
 
   // A provider key to ship inside this build, if one has been set. It is
   // gitignored, so it exists in this working copy and in the artifact you hand
@@ -309,12 +309,12 @@ async function main() {
     const ids = (JSON.parse(fs.readFileSync(bundledKey, "utf8")).providers ?? []).map((p) => p.id);
     say(`  Bundled provider key included: ${ids.join(", ") || "(none)"}`);
   }
-  say(`  Vireo.exe: ${(exe.bytes / 1048576).toFixed(1)} MB, icon ${exe.branded ? "stamped" : "not stamped"}`);
+  say(`  Ledgerline.exe: ${(exe.bytes / 1048576).toFixed(1)} MB, icon ${exe.branded ? "stamped" : "not stamped"}`);
 
   say("");
   say("Compiling installer:");
   fs.mkdirSync(DIST, { recursive: true });
-  const r = spawnSync(compiler, [`/DAppVersion=${VERSION}`, path.join(APP_ROOT, "installer", "vireo.iss")], {
+  const r = spawnSync(compiler, [`/DAppVersion=${VERSION}`, path.join(APP_ROOT, "installer", "ledgerline.iss")], {
     cwd: path.join(APP_ROOT, "installer"),
     stdio: "inherit",
     windowsHide: true,
@@ -325,7 +325,7 @@ async function main() {
     process.exit(1);
   }
 
-  const out = path.join(DIST, `VireoSetup-${VERSION}.exe`);
+  const out = path.join(DIST, `LedgerlineSetup-${VERSION}.exe`);
   if (!fs.existsSync(out)) throw new Error(`installer was not produced at ${out}`);
   const mb = (fs.statSync(out).size / 1048576).toFixed(1);
   say("");

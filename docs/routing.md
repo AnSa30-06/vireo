@@ -31,7 +31,7 @@ score = w.capability * capabilityScore
 There is deliberately **no single universal weighting**.
 
 ```bash
-vireo config mode smart
+ledgerline config mode smart
 ```
 
 The preset governs **the agent's own model too**, not only the routing this product does
@@ -146,8 +146,8 @@ When a fallback was used, the result carries `fellBackFrom`, and the health chec
 ## Overriding
 
 ```bash
-vireo models              # what the gateway serves right now
-vireo route               # what each task would get, and why
+ledgerline models              # what the gateway serves right now
+ledgerline route               # what each task would get, and why
 ```
 
 Or ask the agent: *"use the cheapest model"*, *"switch to maximum quality"*, *"pin
@@ -184,7 +184,7 @@ things about them are worth knowing, all measured on 2026-08-27:
    product and it ships off.
 3. **The modes are not one dial.** On an agent-shaped payload `ultra` saves
    **0.7%** and `rtk` saves **93.9%**, because one targets prose and the other
-   targets tool output. `vireo saving` therefore sorts by the measured
+   targets tool output. `ledgerline saving` therefore sorts by the measured
    number and names the axis each mode works on, rather than presenting a
    single intensity ladder that does not exist.
 

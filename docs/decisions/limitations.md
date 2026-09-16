@@ -25,7 +25,7 @@ files and import a folder. Every week, by hand.
 
 ## It only runs while the app is open
 
-Reminders, snooze expiry and overdue checks happen while Vireo is running.
+Reminders, snooze expiry and overdue checks happen while Ledgerline is running.
 Close the app and nothing happens until you open it again.
 
 There is no scheduled background run in this version, and no notification that
@@ -76,12 +76,12 @@ If a recommendation looks wrong, it probably is. Dismiss it and say why.
 
 ## Free models are slow, and sometimes silent
 
-Vireo works with no API key using free models. Those models are slow (a run
+Ledgerline works with no API key using free models. Those models are slow (a run
 can take a minute or two) and sometimes fail. When one fails, the decision is
 still raised — from the rules, with its evidence and its money figure — and says
 "the AI could not explain this one".
 
-Adding one free provider key makes this much better. Vireo's **Free
+Adding one free provider key makes this much better. Ledgerline's **Free
 capacity** page lists them.
 
 ## One person, one computer

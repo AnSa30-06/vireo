@@ -118,7 +118,7 @@ export async function admin(method, pathname, body) {
       return {
         ok: false,
         reason: bearer ? "unauthorized" : "not-provisioned",
-        remedy: "Run `vireo setup --non-interactive` to mint gateway credentials.",
+        remedy: "Run `ledgerline setup --non-interactive` to mint gateway credentials.",
       };
     }
     let res = await send(method, pathname, body, { cookie });

@@ -19,7 +19,7 @@
 //      out-of-range value is rejected, not coerced into something plausible.
 //   3. NO MATCH IS A RESULT. A refusal carries what was checked and what can be
 //      asked instead. It is never an empty answer with a zero in it, because
-//      "no customer is at risk" and "Vireo did not understand you" are opposite
+//      "no customer is at risk" and "Ledgerline did not understand you" are opposite
 //      facts that would render identically.
 //
 // ⭐ IT WORKS WITH NO MODEL AT ALL. When `complete()` throws — no key, no
@@ -279,7 +279,7 @@ function customerRecords(db, rows, env) {
       ],
     };
   });
-  return { columns: ["Customer", "ARR", "Vireo's label", "Open decisions", "Renewal"], ...body };
+  return { columns: ["Customer", "ARR", "Ledgerline's label", "Open decisions", "Renewal"], ...body };
 }
 
 /* ── refusals the intents share ──────────────────────────────────────────── */
@@ -293,7 +293,7 @@ const noDataRefusal = (what, checked) =>
 
 const noRunRefusal = (what, checked) =>
   refusal({
-    reason: `${what} come from the analysis run, and no analysis has finished in this workspace yet. Vireo will not report zero when the truthful answer is "nobody has looked".`,
+    reason: `${what} come from the analysis run, and no analysis has finished in this workspace yet. Ledgerline will not report zero when the truthful answer is "nobody has looked".`,
     checked,
     remedies: [
       { label: "Run the analysis", kind: "run" },
@@ -579,7 +579,7 @@ export const CATALOGUE = [
       const col = GROUP_COLUMNS[a.groupBy];
       if (!col) {
         return refusal({
-          reason: `"${a.groupBy}" is not a column Vireo groups by, so nothing was run.`,
+          reason: `"${a.groupBy}" is not a column Ledgerline groups by, so nothing was run.`,
           checked: [`the allowed groupings are ${Object.keys(GROUP_COLUMNS).join(", ")}`],
           remedies: [{ label: "Try again", kind: "retry" }],
         });
@@ -673,7 +673,7 @@ export const CATALOGUE = [
           ["Signals of every kind in that run", String(inRun)],
         ],
         records: {
-          columns: ["Customer", "What Vireo saw", "Band", "ARR"],
+          columns: ["Customer", "What Ledgerline saw", "Band", "ARR"],
           ...capped(rows, (s) => ({
             go: s.account_id ? `customers/${s.account_id}` : null,
             cells: [s.account_name ?? s.account_id ?? "Company-wide", s.statement, String(s.band), s.account_arr == null ? "—" : money(s.account_arr, env.currency)],
@@ -747,7 +747,7 @@ export const CATALOGUE = [
             cells: [
               e.title ?? e.decision_id,
               `${humanDate(e.at)} ${String(e.at).slice(11, 16)} UTC`,
-              e.actor === "user" ? "A person" : "Vireo",
+              e.actor === "user" ? "A person" : "Ledgerline",
               EVENT_LABELS[e.kind] ?? e.kind,
               e.account_id ? (names.get(e.account_id) ?? e.account_id) : "Company-wide",
             ],
@@ -790,7 +790,7 @@ export const CATALOGUE = [
 
       if (!rows.length) {
         return refusal({
-          reason: `No customer in this workspace has "${a.name}" in its name or id, so there is nothing to report. Vireo will not answer about the nearest-looking customer instead.`,
+          reason: `No customer in this workspace has "${a.name}" in its name or id, so there is nothing to report. Ledgerline will not answer about the nearest-looking customer instead.`,
           checked: [`${env.accounts} customers were searched by name and by id`, `the search term was "${a.name}"`],
           remedies: [
             { label: "Open the customer list", kind: "go:customers" },
@@ -803,7 +803,7 @@ export const CATALOGUE = [
           value: String(rows.length),
           unit: `customers match "${a.name}"`,
           sentence: "More than one customer matches, so no single set of figures is shown. Open the one you meant.",
-          definition: "The name you typed is matched anywhere inside a customer's name or id, case-insensitively. Vireo lists every match rather than picking the largest one.",
+          definition: "The name you typed is matched anywhere inside a customer's name or id, case-insensitively. Ledgerline lists every match rather than picking the largest one.",
           evidence: [
             ["Query", "SELECT FROM account WHERE lower(name) LIKE ? OR lower(id) LIKE ?"],
             ["Search term", a.name],
@@ -846,7 +846,7 @@ export const CATALOGUE = [
           ["ARR", money(acc.arr, env.currency)],
           ["Plan", acc.plan || "not set"],
           ["Owner", acc.owner || "Unassigned"],
-          ["Vireo's label", LABELS[label] ?? (env.lastRunId ? "no label" : "no run yet")],
+          ["Ledgerline's label", LABELS[label] ?? (env.lastRunId ? "no label" : "no run yet")],
           ["Open decisions", String(open.length)],
           ["Signals in the last run", String(signals)],
           ["Seats purchased", acc.seats_purchased == null ? "—" : String(acc.seats_purchased)],
@@ -1181,7 +1181,7 @@ export async function answerQuestion(db, { question, noModel = false, complete =
       model: picked.model,
       asOf: env.asOf,
       result: refusal({
-        reason: "Vireo has a fixed list of questions it can answer from your records, and this is not one of them. It will not guess which of them you meant and show a real number for that instead.",
+        reason: "Ledgerline has a fixed list of questions it can answer from your records, and this is not one of them. It will not guess which of them you meant and show a real number for that instead.",
         checked: [
           `the question was matched against all ${CATALOGUE.length} entries in the catalogue`,
           `the model answered: ${picked.why || "no entry fits this question"}`,
@@ -1200,7 +1200,7 @@ export async function answerQuestion(db, { question, noModel = false, complete =
         model: null,
         asOf: env.asOf,
         result: refusal({
-          reason: "Vireo has a fixed list of questions it can answer from your records, and none of them matches this closely enough. It will not guess and show a real number for a question you did not ask.",
+          reason: "Ledgerline has a fixed list of questions it can answer from your records, and none of them matches this closely enough. It will not guess and show a real number for a question you did not ask.",
           checked: [
             noModel ? "no model was used for this question" : `no model answered: ${picked.error}`,
             `the question was matched against all ${CATALOGUE.length} entries by keyword instead`,
@@ -1227,7 +1227,7 @@ export async function answerQuestion(db, { question, noModel = false, complete =
       model,
       asOf: env.asOf,
       result: refusal({
-        reason: `Vireo matched this to "${intent.question}" but could not fill in what it needs, so it ran nothing.`,
+        reason: `Ledgerline matched this to "${intent.question}" but could not fill in what it needs, so it ran nothing.`,
         checked: [`chosen by ${sourceLine}`, `the parameter was rejected — ${coerced.error}`],
         remedies: [{ label: "Try again", kind: "retry" }],
         suggestions: suggestionsFrom(ranked),
@@ -1273,7 +1273,7 @@ export async function answerQuestion(db, { question, noModel = false, complete =
       // Always say which question was answered. The person typed their own words
       // and got back a number computed for a catalogue question; hiding which one
       // is how the right number for the wrong question gets believed.
-      sentence: `Vireo read this as "${intent.question}". ${out.sentence ?? ""}`.trim(),
+      sentence: `Ledgerline read this as "${intent.question}". ${out.sentence ?? ""}`.trim(),
       evidence: [...understood, ...(out.evidence ?? [])],
     },
   };

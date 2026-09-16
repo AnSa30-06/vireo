@@ -81,7 +81,7 @@ async function spawnHost() {
     env: {
       ...process.env,
       PLAYWRIGHT_BROWSERS_PATH: PATHS.browsers,
-      VIREO_HOME: PATHS.home,
+      LEDGERLINE_HOME: PATHS.home,
     },
     stdio: ["ignore", "pipe", "pipe"],
     detached: true,

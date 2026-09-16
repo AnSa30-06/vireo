@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-vireo-embed-widget="1">
+<html lang="en" data-ledgerline-embed-widget="1">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Vireo</title>
+    <title>Ledgerline</title>
     <!--
       THE EMBEDDABLE WIDGET. This page is meant to be loaded inside an <iframe>
       on somebody else's site. It is deliberately the thinnest thing that can
@@ -23,7 +23,7 @@
           `script-src 'self'`, so a <script> block in this file would be blocked
           and the widget would render as an empty page. The behaviour lives in
           ./pages/embed.js, which boots its widget half only when it sees
-          data-vireo-embed-widget on the <html> element above.
+          data-ledgerline-embed-widget on the <html> element above.
 
       ⚠️ WHAT THE QUERY STRING CAN AND CANNOT DO. It carries `key`, `scope` and
       the app's per-launch token `t`. The KEY decides what may be read. `scope`
@@ -59,7 +59,7 @@
   </head>
   <body>
     <div class="ew-boot">
-      Loading… If this message stays, Vireo is not running on this computer, or this page was
+      Loading… If this message stays, Ledgerline is not running on this computer, or this page was
       opened without its embed key.
     </div>
     <script type="module" src="./pages/embed.js"></script>

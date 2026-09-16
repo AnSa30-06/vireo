@@ -17,7 +17,7 @@ import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 
-process.env.VIREO_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "vireo-bk-test-"));
+process.env.LEDGERLINE_HOME = fs.mkdtempSync(path.join(os.tmpdir(), "ledgerline-bk-test-"));
 
 const { pkg, APP_ROOT } = await import("../../src/util/paths.mjs");
 const bundled = await import("../../src/setup/bundled-key.mjs");
@@ -57,7 +57,7 @@ test("the .gitignore rule is still there, in words", () => {
 });
 
 test("describe() reports provider names and never a key", () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vireo-bk-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ledgerline-bk-"));
   const file = path.join(dir, "bundled-key.json");
   bundled.write([{ id: "mistral", key: "sk-not-a-real-key-000" }], file);
 
@@ -73,7 +73,7 @@ test("describe() reports provider names and never a key", () => {
 });
 
 test("a malformed or empty file is ignored rather than crashing setup", () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vireo-bk2-"));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "ledgerline-bk2-"));
   for (const body of ["", "{", '{"providers":[]}', '{"providers":[{"id":"mistral"}]}', '{"providers":[{"id":"mistral","key":"  "}]}']) {
     const file = path.join(dir, "bundled-key.json");
     fs.writeFileSync(file, body);
