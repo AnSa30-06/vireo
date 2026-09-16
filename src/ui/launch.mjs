@@ -260,7 +260,10 @@ export async function launchUI(opts = {}) {
   const ui = await startServer();
   // `page` lets `vireo decisions` open straight onto that surface rather
   // than the chat shell with an extra click.
-  const url = uiUrl(opts.page === "decisions" ? "/decisions/" : "/");
+  //
+  // 🔴 /v2/ is the current Decisions interface. This said "/decisions/" after
+  // the rebuild shipped, so `vireo decisions` opened the replaced screens.
+  const url = uiUrl(opts.page === "decisions" ? "/v2/" : "/");
 
   writeLock(serverPort());
   // Re-opening the window is what a second copy asks for when it hands over.

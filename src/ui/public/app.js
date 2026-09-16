@@ -2129,12 +2129,18 @@ async function openPage(name) {
 }
 
 /* Decisions ------------------------------------------------------------- */
-// A second product surface, served from /decisions/ by the same server with the
-// same token. It is a separate page rather than a section of this one because
-// it has its own information architecture - a decision queue, not a chat - and
-// because this file is already 3,000 lines.
+// A second product surface, served by the same server with the same token. It
+// is a separate page rather than a section of this one because it has its own
+// information architecture - a decision queue, not a chat - and because this
+// file is already 3,000 lines.
+//
+// 🔴 /v2/, NOT /decisions/. The rebuilt interface shipped in 1.3.0 and this line
+// still pointed at the one it replaced, so every install opened the old screens
+// and the new ones were unreachable by clicking anything. The UI was in the
+// download the whole time; nothing linked to it. A screen with no route to it
+// is a screen that does not exist.
 pages.decisions = async () => {
-  location.href = "/decisions/?t=" + encodeURIComponent(TOKEN);
+  location.href = "/v2/?t=" + encodeURIComponent(TOKEN);
 };
 
 /* Token saving ---------------------------------------------------------- */

@@ -130,6 +130,10 @@ const NAV = [
   { id: "dashboards", label: "Dashboards", paths: ["M4 4h7v7H4z", "M13 4h7v4.5h-7z", "M13 10.5h7V20h-7z", "M4 13h7v7H4z"] },
   { id: "stories", label: "Stories", paths: ["M5 4.5h11a2 2 0 0 1 2 2V21l-3.5-2.5L11 21l-3.5-2.5L4 21V6.5a2 2 0 0 1 1-2z", "M8 9h7", "M8 13h5"] },
   { id: "embed", label: "Embed", paths: ["M9 8.5L4.5 12 9 15.5", "M15 8.5L19.5 12 15 15.5", "M13.5 5l-3 14"] },
+  // The manual. Last in the list because it is where you go when a screen above
+  // has not explained itself, and it must be present: this interface shipped
+  // once with no way at all to find out what anything did.
+  { id: "help", label: "How to use this", paths: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M9.6 9.4a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.8-.9 1.4v.6", "M12 17h.01"] },
   {
     id: "data",
     label: "Data",
