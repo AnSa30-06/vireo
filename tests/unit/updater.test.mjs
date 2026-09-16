@@ -71,6 +71,19 @@ test("a file that does not match what GitHub published is never written", async 
   fs.mkdirSync(victim, { recursive: true });
   fs.writeFileSync(path.join(victim, "api.mjs"), "ORIGINAL");
 
+  // The bytes are served by a stub, not by the internet.
+  //
+  // ⚠️ THIS USED TO DOWNLOAD FROM raw.githubusercontent.com. When that host was
+  // unreachable the test failed with "could not download ... fetch failed" -
+  // red for a reason that has nothing to do with the integrity check, and
+  // indistinguishable at a glance from the check being broken. It happened
+  // during a release. A test that can fail for an unrelated reason is a test
+  // people learn to wave through.
+  const fetchImpl = async () => ({
+    ok: true,
+    arrayBuffer: async () => new TextEncoder().encode("REPLACEMENT BYTES").buffer,
+  });
+
   const res = await applyUpdate(
     {
       ok: true,
@@ -85,7 +98,7 @@ test("a file that does not match what GitHub published is never written", async 
         },
       ],
     },
-    { root, home },
+    { root, home, fetchImpl },
   );
   assert.equal(res.ok, false);
   assert.match(res.reason, /did not arrive intact/);

@@ -276,7 +276,18 @@ function gitBlobSha(buf) {
  * Nothing in the install is touched until every byte is present and verified,
  * so a dropped connection halfway through leaves the app exactly as it was.
  */
-export async function applyUpdate(plan, { root = APP_ROOT, home = PATHS.home } = {}) {
+/**
+ * @param {object} plan
+ * @param {{root?:string, home?:string, fetchImpl?:typeof fetch}} [opts]
+ *   `fetchImpl` exists so the integrity check can be tested without the network.
+ *   🔴 The test for "a file that does not match what GitHub published is never
+ *   written" used to download a real file from raw.githubusercontent.com. When
+ *   that host was unreachable the test failed with "could not download ... fetch
+ *   failed" - a red suite that says nothing about the guarantee it covers, and
+ *   which reads at a glance like the integrity check broke. A check that fails
+ *   for a reason unrelated to what it checks trains you to ignore it.
+ */
+export async function applyUpdate(plan, { root = APP_ROOT, home = PATHS.home, fetchImpl = fetch } = {}) {
   if (!plan?.ok || plan.upToDate) return { ok: false, reason: "there is nothing to update" };
   if (plan.blocked) {
     return { ok: false, reason: plan.reasons.join("; "), needsInstaller: true };
@@ -298,7 +309,7 @@ export async function applyUpdate(plan, { root = APP_ROOT, home = PATHS.home } =
     }
     let buf;
     try {
-      const r = await fetch(f.raw_url, { headers: { "user-agent": UA }, signal: AbortSignal.timeout(60_000) });
+      const r = await fetchImpl(f.raw_url, { headers: { "user-agent": UA }, signal: AbortSignal.timeout(60_000) });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       buf = Buffer.from(await r.arrayBuffer());
     } catch (err) {
