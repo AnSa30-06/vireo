@@ -474,7 +474,13 @@ views.onboarding = async () => {
 
     const demo = el("button", "choice");
     demo.append(el("b", null, "Load the demo company"));
-    demo.append(el("span", null, "48 made-up customers with real-looking problems in them. Nothing of yours is used. This is the fastest way to see what the product does."));
+    // ⚠️ NO CUSTOMER COUNT IN THIS SENTENCE. It said "48 made-up customers" and
+    // went stale the moment the generator grew - the demo now loads a different
+    // number, and a wrong count on the button is a fabricated figure in the
+    // product. The v2 Data screen prints the real description from
+    // decisionsStatus.variants, which is computed by the generator itself. Do the
+    // same here if this screen ever needs the number, or say nothing.
+    demo.append(el("span", null, "A made-up company with real-looking problems planted in it. Nothing of yours is used. This is the fastest way to see what the product does."));
     demo.onclick = async () => {
       demo.disabled = true;
       demo.querySelector("span").textContent = "Loading…";

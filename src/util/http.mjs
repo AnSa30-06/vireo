@@ -9,6 +9,34 @@ const log = logger("http");
 
 const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504, 522, 524]);
 
+/**
+ * Network errors that are an ANSWER, not a hiccup.
+ *
+ * 🔴 MEASURED COST OF GETTING THIS WRONG: with no model gateway listening, a
+ * full analysis run took 12.8s and 14.0s, and essentially all of it was this
+ * loop. Each reasoning attempt retried three times with backoff before giving
+ * up, and the run makes several attempts before its failure budget stops it.
+ * That is 13 seconds of a blank screen, and it happens on exactly the machine
+ * where the gateway did not start - a demo laptop.
+ *
+ * ⭐ A refused connection means nothing is listening on that port. Waiting two
+ * seconds and asking the same closed port again cannot change the answer. DNS
+ * failure and an unreachable host are the same kind of fact.
+ *
+ * ⚠️ ECONNRESET and ETIMEDOUT are deliberately NOT here. Those mean something
+ * WAS listening and the conversation broke, which is the flaky network this
+ * backoff was written for. Keep retrying those.
+ */
+const FINAL_NETWORK_CODES = new Set(["ECONNREFUSED", "ENOTFOUND", "EHOSTUNREACH", "ENETUNREACH"]);
+
+/** Node wraps the real socket error in `cause`, sometimes more than one deep. */
+function isFinalNetworkError(err) {
+  for (let e = err, depth = 0; e && depth < 5; e = e.cause, depth++) {
+    if (e.code && FINAL_NETWORK_CODES.has(e.code)) return true;
+  }
+  return false;
+}
+
 export class HttpError extends Error {
   constructor(status, url, body) {
     super(`HTTP ${status} for ${url}`);
@@ -57,6 +85,10 @@ export async function request(url, opts = {}) {
     } catch (err) {
       clearTimeout(timer);
       lastErr = err;
+      if (isFinalNetworkError(err)) {
+        log.warn(`not retrying: nothing is listening`, { url, err: err.message });
+        break;
+      }
       if (attempt < maxAttempts - 1) {
         const wait = backoffMs(attempt, null);
         log.warn(`retrying network error`, { url, attempt, wait, err: err.message });

@@ -75,3 +75,38 @@ test("the health check introduces itself as Vireo", async () => {
   assert.match(rendered, /VIREO HEALTH CHECK/, "the health check banner must name this product");
   assert.ok(!/OMNI AGENT/i.test(rendered), "the banner must not name the product it was forked from");
 });
+
+test("no screen hard-codes how big the demo company is", () => {
+  // 🔴 THIS WENT STALE AND NOBODY NOTICED. The setup screen said "48 made-up
+  // customers" in a fixed string. The generator later grew, the sentence did
+  // not, and the button then stated a number the product would not produce - a
+  // fabricated figure, on the first screen a new user sees.
+  //
+  // ⭐ The rule is not "keep the number up to date". It is that a screen must
+  // never carry its own copy of a number the code computes. The v2 Data screen
+  // gets this right: it prints decisionsStatus.variants, which the generator
+  // builds from its own size. This guard exists so the next person copies that
+  // and not the string.
+  //
+  // ⚠️ Comments are exempt. A comment saying "~48 accounts" is a note to a
+  // developer about the scale of a thing, not a claim shown to anybody.
+  const offenders = [];
+  for (const root of ROOTS) {
+    for (const f of jsFiles(root)) {
+      const lines = fs.readFileSync(f, "utf8").split("\n");
+      lines.forEach((line, i) => {
+        if (isComment(line)) return;
+        // A digit immediately before a word for the demo's contents, inside a
+        // quoted string. "48 made-up customers", "120 demo accounts".
+        if (!/["'`][^"'`]*\b\d{1,4}\s+(made-up|demo|fake|sample|pretend)?\s*(customers|accounts)\b/i.test(line)) return;
+        offenders.push(`${path.relative(pkg("."), f)}:${i + 1}  ${line.trim().slice(0, 100)}`);
+      });
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    "these screens state a demo size of their own instead of reading it from the generator:\n  " +
+      offenders.join("\n  "),
+  );
+});

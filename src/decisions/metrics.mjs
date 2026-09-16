@@ -56,7 +56,15 @@ const log = logger("decisions/metrics");
  * while a chart still points at the metric, so the cascade should never fire
  * from the UI; it exists so that a row deleted by hand cannot leave an orphan.
  */
-export const METRICS_MIGRATION = `
+// ⚠️ THE SQL LIVES IN A HOISTED FUNCTION, and that is load-bearing.
+// db.mjs imports this module to build MIGRATIONS, and this module imports
+// db.mjs back - a cycle. When THIS file is the entry point, db.mjs's body runs
+// first, while this file's body has not. A `const` read at that moment is in the
+// temporal dead zone and throws "Cannot access ... before initialization" at
+// import time. A function DECLARATION is hoisted and already callable.
+// Measured both ways before choosing this. Do not inline it back into the const.
+export function metricsMigrationSql() {
+  return `
   CREATE TABLE saved_metric (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -92,6 +100,10 @@ export const METRICS_MIGRATION = `
   );
   CREATE INDEX dashboard_chart_order ON dashboard_chart(dashboard_id, position);
 `;
+}
+
+/** The same string, for callers that want it as a value rather than a call. */
+export const METRICS_MIGRATION = metricsMigrationSql();
 
 /* ══ THE ALLOWLIST ═════════════════════════════════════════════════════════
  *

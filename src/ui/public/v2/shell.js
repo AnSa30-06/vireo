@@ -124,6 +124,23 @@ const NAV = [
     ],
   },
   { id: "ask", label: "Ask", paths: ["M20 15a3 3 0 0 1-3 3H9l-4.5 3V6a3 3 0 0 1 3-3h9.5a3 3 0 0 1 3 3z"] },
+  // The graph sits next to Ask because it answers the same kind of question -
+  // "how does this connect to that" - by walking relationships instead of
+  // matching a catalogue entry.
+  {
+    id: "graph",
+    label: "Knowledge graph",
+    paths: [
+      "M5 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z",
+      "M19 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z",
+      "M12 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z",
+      "M19 15a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z",
+      "M6.5 8.5 11 16",
+      "M17.5 8.5 13 16",
+      "M7 6h10",
+      "M19 9v2",
+    ],
+  },
   { id: "segments", label: "Segments", paths: ["M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z", "M12 3v9h9"] },
   // Saved analysis. These sit after Segments because they are things you build
   // from the data rather than things the app hands you.
@@ -134,6 +151,19 @@ const NAV = [
   // has not explained itself, and it must be present: this interface shipped
   // once with no way at all to find out what anything did.
   { id: "help", label: "How to use this", paths: ["M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z", "M9.6 9.4a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.8-.9 1.4v.6", "M12 17h.01"] },
+  // "Why this exists" sits beside the manual rather than at the top, because it
+  // is the answer to a different question. Help says how a screen works; this
+  // says why the product computes its numbers instead of asking a model for
+  // them, and it quotes the live workspace while it does so.
+  {
+    id: "why",
+    label: "Why this exists",
+    paths: [
+      "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z",
+      "M12 16v-4.5",
+      "M12 8h.01",
+    ],
+  },
   {
     id: "data",
     label: "Data",

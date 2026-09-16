@@ -12,16 +12,29 @@
 // how many have been applied; a start applies the rest inside one transaction.
 // Never edit a migration that has shipped - append a new one.
 import { DatabaseSync } from "node:sqlite";
-// ⚠️ A DELIBERATE IMPORT CYCLE, and it is safe for one specific reason.
-// These three modules import nowIso/getSettings/tx back from this file. ESM
-// finishes evaluating each of them before this file's body runs, so the three
-// constants exist by the time MIGRATIONS is built; and what they import back
-// are FUNCTION DECLARATIONS, which are hoisted, so their module bodies see
-// real bindings rather than a temporal-dead-zone error. It would break if any
-// of them ever CALLED one of those at module top level - none does.
-import { METRICS_MIGRATION } from "./metrics.mjs";
-import { STORY_MIGRATION } from "./stories.mjs";
-import { EMBED_MIGRATION } from "./embed.mjs";
+// ⚠️ A DELIBERATE IMPORT CYCLE. These three modules import nowIso/getSettings/tx
+// back from this file, and what they import back are FUNCTION DECLARATIONS,
+// which are hoisted, so their module bodies see real bindings rather than a
+// temporal-dead-zone error. It would break if any of them ever CALLED one of
+// those at module top level - none does.
+//
+// 🔴 FUNCTIONS, NOT CONSTANTS, AND THE REASON IS MEASURED. This used to import
+// METRICS_MIGRATION / STORY_MIGRATION / EMBED_MIGRATION, which are `const`. The
+// old comment claimed ESM finishes evaluating each of them before this file's
+// body runs. THAT IS ONLY TRUE WHEN THIS FILE IS REACHED FIRST. Import
+// embed.mjs directly and the order inverts: this file's body runs while
+// embed.mjs's has not, the const is in the temporal dead zone, and the import
+// throws "Cannot access 'EMBED_MIGRATION' before initialization" before a line
+// of code runs. Three of the twenty-four modules in this folder could not be
+// imported on their own, and the whole test suite was green, because every test
+// happened to reach db.mjs first.
+//
+// A hoisted function declaration is callable the moment the module is
+// instantiated, before its body runs. Verified both ways with a two-file cycle:
+// the const threw, the function returned its string. Keep these as calls.
+import { metricsMigrationSql } from "./metrics.mjs";
+import { storyMigrationSql } from "./stories.mjs";
+import { embedMigrationSql } from "./embed.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { logger } from "../util/log.mjs";
@@ -278,9 +291,9 @@ export const MIGRATIONS = [
   // collisions against each other and against every table above before being
   // appended. Two migrations creating the same table fails the whole upgrade
   // transaction, and then no workspace opens at all.
-  METRICS_MIGRATION,
-  STORY_MIGRATION,
-  EMBED_MIGRATION,
+  metricsMigrationSql(),
+  storyMigrationSql(),
+  embedMigrationSql(),
 ];
 
 /**

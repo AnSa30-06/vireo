@@ -13,7 +13,7 @@ import path from "node:path";
 import os from "node:os";
 import * as workspace from "./workspace.mjs";
 import { importFolder, writeTemplates, CONTRACT } from "./ingest.mjs";
-import { generate, writeDataset, variant, VARIANTS } from "./synthetic.mjs";
+import { generate, writeDataset, variant, VARIANTS, seedHistory } from "./synthetic.mjs";
 import { runAnalysis, rereason, asOfFor } from "./run.mjs";
 import { answerQuestion, CATALOGUE } from "./ask.mjs";
 import * as D from "./decisions.mjs";
@@ -24,6 +24,7 @@ import * as S from "./segments.mjs";
 import { metricsRoutes } from "./metrics.mjs";
 import { storyRoutes } from "./stories.mjs";
 import { embedRoutes } from "./embed.mjs";
+import { graphRoutes } from "./graph.mjs";
 import { rules, editableThresholds, actionLabel } from "./rules.mjs";
 import { LABELS, severityRank } from "./situations.mjs";
 import { PATHS } from "../util/paths.mjs";
@@ -293,6 +294,13 @@ export const decisionRoutes = {
       // The demo needs its two dismissed decisions to already exist, or the
       // suppression scenario cannot be demonstrated at all.
       seedDismissed(db, data, asOf);
+      // And it needs a past: decisions raised months ago, worked, resolved, with
+      // the outcome recorded. That is the one thing a chat window cannot do - it
+      // has no memory of what was decided or whether it worked - so a demo
+      // without it is missing the argument. Every statement it writes is replayed
+      // from that customer's own rows through the live signal engine, so no
+      // sentence can disagree with the record underneath it.
+      seedHistory(db, data, asOf);
       setMeta(db, "as_of", asOf);
       setMeta(db, "demo_variant", name);
       setSettings(db, { demoMode: true });
@@ -903,6 +911,11 @@ export const decisionRoutes = {
   ...metricsRoutes,
   ...storyRoutes,
   ...embedRoutes,
+  // The knowledge graph is the one module here with NO migration, deliberately.
+  // It derives its nodes and edges from the tables above on every build and
+  // caches them against a fingerprint of the source rows, so it cannot drift out
+  // of step with the data it describes. Do not give it a table.
+  ...graphRoutes,
 };
 
 /** Seed the two "previously dismissed" demo decisions. */

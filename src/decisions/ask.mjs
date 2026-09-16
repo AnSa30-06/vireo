@@ -55,7 +55,28 @@ const refusal = (r) => ({ kind: "refusal", checked: [], remedies: [], suggestion
 // Bound, not interpolated, even though these five strings are ours: one idiom for
 // every value in this file means there is no "safe case" for the next person to
 // copy in the direction of an unsafe one.
-const OPEN_IN = `status IN (${OPEN_STATUSES.map(() => "?").join(",")})`;
+//
+// 🔴 LAZY, AND IT HAS TO STAY LAZY. This was a module-scope const, and it made
+// the whole decisions package unimportable in one order:
+//
+//   synthetic.mjs -> decisions.mjs -> db.mjs -> ask.mjs -> decisions.mjs
+//
+// db.mjs importing the feature modules is a deliberate cycle and is documented
+// there as safe, because everything it reaches back for is a HOISTED FUNCTION
+// DECLARATION. OPEN_STATUSES is a `const`, so on the way round it is still in
+// the temporal dead zone, and reading it at module scope threw
+// "Cannot access 'OPEN_STATUSES' before initialization" - at import time,
+// before any code ran.
+//
+// ⚠️ The failure does not look like a cycle. It looks like ask.mjs being
+// broken, and only in SOME entry orders: the test suite was entirely green,
+// because every test happened to import a module that initialised decisions.mjs
+// first. It surfaced only when something imported synthetic.mjs on its own.
+//
+// Computing it on first use puts the read inside a function body, where
+// decisions.mjs is always finished. Do not turn it back into a top-level const.
+let _openIn = null;
+const OPEN_IN = () => (_openIn ??= `status IN (${OPEN_STATUSES.map(() => "?").join(",")})`);
 
 // A workspace can hold thousands of rows and the page caps its table at 50. The
 // server cap is higher so the "showing the first N" line stays truthful, and
@@ -183,7 +204,7 @@ function accountNames(db) {
 function openCountsByAccount(db) {
   return new Map(
     db
-      .prepare(`SELECT account_id, COUNT(*) n FROM decision WHERE ${OPEN_IN} GROUP BY account_id`)
+      .prepare(`SELECT account_id, COUNT(*) n FROM decision WHERE ${OPEN_IN()} GROUP BY account_id`)
       .all(...OPEN_STATUSES)
       .map((r) => [r.account_id, r.n]),
   );
@@ -321,7 +342,7 @@ export const CATALOGUE = [
       return out;
     },
     run(db, a, env) {
-      const where = [OPEN_IN];
+      const where = [OPEN_IN()];
       const args = [...OPEN_STATUSES];
       if (a.kind !== "any") {
         where.push("kind = ?");
@@ -388,7 +409,7 @@ export const CATALOGUE = [
       return {};
     },
     run(db, a, env) {
-      const where = [OPEN_IN];
+      const where = [OPEN_IN()];
       const args = [...OPEN_STATUSES];
       if (a.kind !== "any") {
         where.push("kind = ?");
@@ -798,7 +819,7 @@ export const CATALOGUE = [
       const label = env.lastRunId
         ? db.prepare("SELECT label FROM account_run_state WHERE run_id = ? AND account_id = ?").get(env.lastRunId, acc.id)?.label
         : null;
-      const open = db.prepare(`SELECT * FROM decision WHERE account_id = ? AND ${OPEN_IN} ORDER BY impact_amount DESC`).all(acc.id, ...OPEN_STATUSES);
+      const open = db.prepare(`SELECT * FROM decision WHERE account_id = ? AND ${OPEN_IN()} ORDER BY impact_amount DESC`).all(acc.id, ...OPEN_STATUSES);
       const usage = db.prepare("SELECT MAX(day) d, COUNT(*) n FROM metric_daily WHERE account_id = ? AND metric = 'active_users'").get(acc.id);
       const signals = env.lastRunId
         ? db.prepare("SELECT COUNT(*) n FROM signal WHERE run_id = ? AND account_id = ?").get(env.lastRunId, acc.id).n

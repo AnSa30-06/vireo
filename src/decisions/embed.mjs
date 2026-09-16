@@ -78,7 +78,15 @@ const bad = (error, extra = {}) => ({ ok: false, error, ...extra });
  * exactly as long as it takes to hand it back to the person who created it.
  * There is no route, and no function in this file, that can print it again.
  */
-export const EMBED_MIGRATION = `
+// ⚠️ THE SQL LIVES IN A HOISTED FUNCTION, and that is load-bearing.
+// db.mjs imports this module to build MIGRATIONS, and this module imports
+// db.mjs back - a cycle. When THIS file is the entry point, db.mjs's body runs
+// first, while this file's body has not. A `const` read at that moment is in the
+// temporal dead zone and throws "Cannot access ... before initialization" at
+// import time. A function DECLARATION is hoisted and already callable.
+// Measured both ways before choosing this. Do not inline it back into the const.
+export function embedMigrationSql() {
+  return `
 CREATE TABLE embed_scope (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -108,6 +116,10 @@ CREATE TABLE embed_key (
 CREATE UNIQUE INDEX embed_key_hash ON embed_key(key_hash);
 CREATE INDEX embed_key_scope ON embed_key(scope_id);
 `;
+}
+
+/** The same string, for callers that want it as a value rather than a call. */
+export const EMBED_MIGRATION = embedMigrationSql();
 
 /* ══ CAPS AND DEFAULTS ═════════════════════════════════════════════════════ */
 
@@ -131,7 +143,18 @@ export function catalogueVocabulary() {
   return CATALOGUE.map((i) => ({ id: i.id, question: i.question, returns: i.counts, tables: i.tables }));
 }
 
-const CATALOGUE_IDS = new Set(CATALOGUE.map((i) => i.id));
+// 🔴 LAZY FOR THE SAME REASON AS OPEN_IN IN ask.mjs - see the long note there.
+// This was `const CATALOGUE_IDS = new Set(CATALOGUE.map(...))` at module scope,
+// and CATALOGUE is a `const` in ask.mjs, which db.mjs pulls into a cycle. Read
+// on the way round it is still in the temporal dead zone, so importing this
+// package by certain entry points threw "Cannot access 'CATALOGUE' before
+// initialization" before a line of code ran.
+//
+// ⚠️ Every test stayed green, because each one happened to import something that
+// initialised ask.mjs first. Reading it on first use puts the access inside a
+// function body, where the cycle has always resolved. Do not hoist it back.
+let _catalogueIds = null;
+const catalogueIds = () => (_catalogueIds ??= new Set(CATALOGUE.map((i) => i.id)));
 const questionFor = (intentId) => CATALOGUE.find((i) => i.id === intentId)?.question ?? intentId;
 
 /* ══ SCOPES ════════════════════════════════════════════════════════════════ */
@@ -192,7 +215,7 @@ function checkIntents(intents) {
   const out = [];
   for (const raw of intents) {
     const v = String(raw ?? "");
-    if (!CATALOGUE_IDS.has(v)) return bad(`"${v.slice(0, 40)}" is not a question Vireo can answer`);
+    if (!catalogueIds().has(v)) return bad(`"${v.slice(0, 40)}" is not a question Vireo can answer`);
     if (!out.includes(v)) out.push(v);
   }
   return ok({ intents: out });

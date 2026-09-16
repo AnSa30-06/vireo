@@ -56,6 +56,65 @@ test("everything the v2 shell lists has a page file behind it", () => {
   assert.deepEqual(missing, [], `these sidebar rows have no page module: ${missing.join(", ")}`);
 });
 
+test("every v2 page module is reachable from somewhere", () => {
+  // 🔴 THE OTHER DIRECTION, AND THE ONE THAT WAS MISSING. The test above walks
+  // NAV -> page file, so it catches a sidebar row with no module behind it. It
+  // cannot catch a module with no sidebar row, which is the SAME class of defect
+  // as the one this whole file was written about: a finished, tested screen that
+  // nobody can open.
+  //
+  // It happened twice more. pages/graph.js and pages/why.js were both built,
+  // both verified in a browser, and neither was linked from anything. Every test
+  // in the suite stayed green, because every test asked whether the pages worked
+  // and none asked whether they could be opened.
+  //
+  // A page is reachable if the sidebar lists it, or if another page navigates to
+  // it. Nothing else counts - and "the shell can import it by name" in
+  // particular does not count, because resolvePage() imports ./pages/<id>.js for
+  // ANY id, so a page is always loadable by typing its address and never
+  // findable by using the product.
+  const dir = pkg("src", "ui", "public", "v2", "pages");
+  const modules = fs.readdirSync(dir).filter((f) => f.endsWith(".js")).map((f) => f.replace(/\.js$/, ""));
+  assert.ok(modules.length >= 12, `expected the whole page set, saw ${modules.length}`);
+
+  const shell = read("src", "ui", "public", "v2", "shell.js");
+  const nav = shell.match(/const NAV = \[[\s\S]*?\n\];/);
+  assert.ok(nav, "shell.js must define NAV");
+  const listed = new Set([...nav[0].matchAll(/id:\s*"([a-z0-9-]+)"/g)].map((m) => m[1]));
+
+  // Every other page file's text, so a detail page can prove somebody links to it.
+  const pageSource = modules.map((id) => fs.readFileSync(path.join(dir, `${id}.js`), "utf8"));
+
+  // resolvePage() turns "#/decisions/<id>" into pages/decision.js by dropping the
+  // trailing "s" when the route carries an id. That is how every detail view is
+  // reached, so it counts as reachable - but only while the shell still does it,
+  // which is what the next assertion pins.
+  assert.match(
+    shell,
+    /route\.id && route\.page\.endsWith\("s"\)/,
+    "resolvePage must still singularise a route with an id, or every detail page becomes unreachable",
+  );
+  const reachableAsDetailOf = (id) => listed.has(`${id}s`);
+
+  const unreachable = [];
+  for (const id of modules) {
+    if (listed.has(id)) continue;
+    if (reachableAsDetailOf(id)) continue;
+    // Otherwise some OTHER page must navigate to "#/<id>" explicitly.
+    const linkedFrom = modules.filter(
+      (other, i) => other !== id && new RegExp(`#/${id}(?![a-z0-9-])`).test(pageSource[i]),
+    );
+    if (linkedFrom.length === 0) unreachable.push(id);
+  }
+
+  assert.deepEqual(
+    unreachable,
+    [],
+    `these page modules exist but nothing opens them - add a NAV row in shell.js, ` +
+      `or link to them from the page they belong to: ${unreachable.join(", ")}`,
+  );
+});
+
 test("the manual is reachable inside the new interface", () => {
   // The manual was written once and wired only into the older page. Moving the
   // app to v2 without this would have dropped it silently, leaving no way to

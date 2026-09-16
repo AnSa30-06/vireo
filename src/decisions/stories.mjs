@@ -73,7 +73,15 @@ const log = logger("decisions/stories");
  * There is no `last_run_at` column on `story`. The last run is a fact about the
  * run table and is read from it, so the two can never disagree.
  */
-export const STORY_MIGRATION = `
+// ⚠️ THE SQL LIVES IN A HOISTED FUNCTION, and that is load-bearing.
+// db.mjs imports this module to build MIGRATIONS, and this module imports
+// db.mjs back - a cycle. When THIS file is the entry point, db.mjs's body runs
+// first, while this file's body has not. A `const` read at that moment is in the
+// temporal dead zone and throws "Cannot access ... before initialization" at
+// import time. A function DECLARATION is hoisted and already callable.
+// Measured both ways before choosing this. Do not inline it back into the const.
+export function storyMigrationSql() {
+  return `
   CREATE TABLE story (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -96,6 +104,10 @@ export const STORY_MIGRATION = `
   );
   CREATE INDEX story_run_story ON story_run(story_id, at);
 `;
+}
+
+/** The same string, for callers that want it as a value rather than a call. */
+export const STORY_MIGRATION = storyMigrationSql();
 
 /** Ids for the two new tables, using the shared prefix helper. */
 const storyId = () => newId("sty");
